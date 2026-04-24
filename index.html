@@ -38,6 +38,7 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .chip{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;text-align:left;line-height:1.4;font-family:'DM Sans',sans-serif}
 .chip:hover{border-color:var(--purple);color:var(--text)}
 .chip.selected{background:#3C348922;border-color:var(--purple);color:var(--purple-light)}
+.chip:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
 .chip-icon{font-size:16px;margin-bottom:4px;display:block}
 .custom-row{display:flex;gap:8px;margin-top:.75rem}
 .custom-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;outline:none}
@@ -293,12 +294,14 @@ textarea:focus{border-color:var(--purple)}
     </div>
   </div>
   <div class="edit-panel" id="edit-panel">
-    <div class="edit-panel-title">&#9776; drag to reorder &nbsp;&nbsp; &times; to remove</div>
-    <ul class="drag-list" id="drag-list"></ul>
-    <div class="edit-add-row">
-      <input class="custom-input" id="edit-add-input" placeholder="Add a new tab..." maxlength="24" style="font-size:13px;padding:8px 10px">
+    <div class="edit-panel-title" style="margin-bottom:.5rem">Add topics</div>
+    <div id="edit-preset-grid" class="preset-grid" style="margin-bottom:1rem"></div>
+    <div class="edit-add-row" style="margin-bottom:1rem">
+      <input class="custom-input" id="edit-add-input" placeholder="Create your own..." maxlength="24" style="font-size:13px;padding:8px 10px">
       <button class="add-btn" onclick="editAddTab()" style="font-size:13px;padding:8px 12px">Add</button>
     </div>
+    <div class="edit-panel-title">&#9776; drag to reorder &nbsp;&nbsp; &times; to remove</div>
+    <ul class="drag-list" id="drag-list"></ul>
   </div>
   <div class="tab-bar" id="tab-bar"></div>
   <div id="sections-wrap"></div>
@@ -802,6 +805,13 @@ function toggleEditMode(){
   else{panel.classList.remove('open');btn.classList.remove('active-edit');saveTabs();renderTabBar();}
 }
 function renderDragList(){
+  const activeKeys=new Set(tabs.map(t=>t.key));
+  document.getElementById('edit-preset-grid').innerHTML=PRESETS.map(p=>{
+    const on=activeKeys.has(p.key);
+    return `<button class="chip${on?' selected':''}" onclick="editTogglePreset('${p.key}')" ${on?'disabled':''}>
+      <span class="chip-icon">${p.icon}</span>${p.label}
+    </button>`;
+  }).join('');
   document.getElementById('drag-list').innerHTML=tabs.map((t,i)=>
     `<li class="drag-item" draggable="true" data-i="${i}"
       ondragstart="dStart(event,${i})" ondragover="dOver(event,${i})"
@@ -811,6 +821,12 @@ function renderDragList(){
       <button class="drag-delete" onclick="delTab(${i})">×</button>
     </li>`
   ).join('');
+}
+
+function editTogglePreset(key){
+  const p=PRESETS.find(x=>x.key===key);if(!p)return;
+  tabs.push({key:p.key,label:p.label,icon:p.icon,desc:p.desc,question:p.question});
+  renderDragList();
 }
 function dStart(e,i){dragSrc=i;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
 function dOver(e,i){e.preventDefault();document.querySelectorAll('.drag-item').forEach(el=>el.classList.remove('drag-over'));e.currentTarget.classList.add('drag-over');}
