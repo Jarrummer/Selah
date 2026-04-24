@@ -467,7 +467,7 @@ function renderDaySummary(k){
 
 // HELPERS
 function tk(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function sc(s){if(s>=80)return '#3B9e75';if(s>=60)return '#639922';if(s>=40)return '#EF9F27';if(s>=20)return '#D85A30';return '#E24B4A';}
+function sc(s){if(s>=80)return '#86EFAC';if(s>=60)return '#16A34A';if(s>=40)return '#FDE047';if(s>=20)return '#FB923C';return '#EF4444';}
 function emoji(v){if(v>=85)return '😄';if(v>=65)return '🙂';if(v>=45)return '😐';if(v>=25)return '😕';return '😞';}
 function fd(k){const[y,m,d]=k.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return `${mn[parseInt(m)-1]} ${parseInt(d)}, ${y}`;}
 function calcStreak(){const t=new Date();let s=0;for(let i=0;i<365;i++){const d=new Date(t);d.setDate(d.getDate()-i);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(db[k])s++;else if(i>0)break;}return s;}
