@@ -20,6 +20,12 @@ html,body{background:#0d0d0f;font-family:'DM Sans',sans-serif;color:#f0efe8;min-
 .screen{display:none;min-height:100vh;padding-bottom:80px}
 .screen.active{display:block}
 
+/* AUTH */
+#screen-auth{padding:3rem 1.25rem 6rem}
+.auth-error{display:none;color:var(--red);font-size:13px;margin-bottom:1rem;padding:10px 12px;background:#E24B4A18;border-radius:var(--radius-sm);line-height:1.5}
+.auth-switch{text-align:center;margin-top:1.25rem;font-size:13px;color:var(--text2)}
+.auth-switch span{color:var(--purple);cursor:pointer;margin-left:4px}
+
 /* ONBOARDING */
 #screen-onboard{padding:2rem 1.25rem 6rem}
 .logo{font-size:36px;font-weight:600;letter-spacing:-1px;margin-bottom:6px}
@@ -49,6 +55,7 @@ html,body{background:#0d0d0f;font-family:'DM Sans',sans-serif;color:#f0efe8;min-
 .app-header{padding:1.25rem 1.25rem .75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:20}
 .app-title{font-size:20px;font-weight:600;letter-spacing:-.3px}
 .app-date{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px}
+.header-btns{display:flex;gap:8px;align-items:center}
 .pen-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
 .pen-btn.active-edit{border-color:var(--purple);color:var(--purple)}
 
@@ -147,8 +154,23 @@ textarea:focus{border-color:var(--purple)}
 </head>
 <body>
 
+<!-- AUTH -->
+<div id="screen-auth" class="screen active" style="padding:3rem 1.25rem 6rem">
+  <div class="logo">Se<span>l</span>ah</div>
+  <p class="logo-sub">Pause. Reflect. Grow.</p>
+  <div class="auth-error" id="auth-error"></div>
+  <div class="section-label" id="auth-label">Sign in to your account</div>
+  <input class="custom-input" id="auth-email" type="email" placeholder="Email" autocomplete="email" style="width:100%;margin-bottom:8px">
+  <input class="custom-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;margin-bottom:0">
+  <button class="start-btn" id="auth-btn" onclick="authSubmit()">Sign in</button>
+  <p class="auth-switch">
+    <span id="auth-switch-text">Don't have an account?</span>
+    <span onclick="toggleAuthMode()" id="auth-switch-btn">Sign up</span>
+  </p>
+</div>
+
 <!-- ONBOARDING -->
-<div id="screen-onboard" class="screen active">
+<div id="screen-onboard" class="screen">
   <div class="logo">Se<span>l</span>ah</div>
   <p class="logo-sub">Pause. Reflect. Grow.<br>Pick the areas you want to work on.</p>
   <div class="section-label">Growth areas</div>
@@ -169,7 +191,10 @@ textarea:focus{border-color:var(--purple)}
       <div class="app-title">Selah</div>
       <div class="app-date" id="header-date"></div>
     </div>
-    <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9998;</div>
+    <div class="header-btns">
+      <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9998;</div>
+      <div class="pen-btn" onclick="signOut()" title="Sign out" style="font-size:14px">&#10148;</div>
+    </div>
   </div>
   <div class="edit-panel" id="edit-panel">
     <div class="edit-panel-title">&#9776; drag to reorder &nbsp;&nbsp; &times; to remove</div>
@@ -202,7 +227,82 @@ textarea:focus{border-color:var(--purple)}
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
+// FIREBASE
+firebase.initializeApp({
+  apiKey:"AIzaSyAEM1HyVHKyehEkiG5mawKI7GRy4-UXY5c",
+  authDomain:"selah-3cff0.firebaseapp.com",
+  projectId:"selah-3cff0",
+  storageBucket:"selah-3cff0.firebasestorage.app",
+  messagingSenderId:"221740829359",
+  appId:"1:221740829359:web:666da25fa90f8a00a6225a"
+});
+const fauth=firebase.auth();
+const fstore=firebase.firestore();
+let currentUid=null;
+
+let authMode='signin';
+function toggleAuthMode(){
+  authMode=authMode==='signin'?'signup':'signin';
+  const si=authMode==='signin';
+  document.getElementById('auth-label').textContent=si?'Sign in to your account':'Create an account';
+  document.getElementById('auth-btn').textContent=si?'Sign in':'Sign up';
+  document.getElementById('auth-switch-text').textContent=si?'Don\'t have an account?':'Already have an account?';
+  document.getElementById('auth-switch-btn').textContent=si?'Sign up':'Sign in';
+  document.getElementById('auth-error').style.display='none';
+}
+async function authSubmit(){
+  const email=document.getElementById('auth-email').value.trim();
+  const pass=document.getElementById('auth-password').value;
+  const errEl=document.getElementById('auth-error');
+  errEl.style.display='none';
+  if(!email||!pass){errEl.textContent='Please enter your email and password.';errEl.style.display='block';return;}
+  const btn=document.getElementById('auth-btn');
+  btn.textContent='...';btn.disabled=true;
+  try{
+    if(authMode==='signin')await fauth.signInWithEmailAndPassword(email,pass);
+    else await fauth.createUserWithEmailAndPassword(email,pass);
+  }catch(e){
+    errEl.textContent=e.message.replace('Firebase: ','').replace(/ \(auth\/.*?\)\./,'').replace(/ \(auth\/.*?\)/,'');
+    errEl.style.display='block';
+    btn.textContent=authMode==='signin'?'Sign in':'Sign up';btn.disabled=false;
+  }
+}
+function signOut(){fauth.signOut();}
+
+fauth.onAuthStateChanged(async user=>{
+  if(user){
+    currentUid=user.uid;
+    await loadFromFirestore();
+    document.getElementById('screen-auth').classList.remove('active');
+    if(tabs&&tabs.length){launchApp();}
+    else{initOnboard();document.getElementById('screen-onboard').classList.add('active');}
+  }else{
+    currentUid=null;db={};tabs=null;
+    ['screen-onboard','screen-app'].forEach(id=>document.getElementById(id).classList.remove('active'));
+    document.getElementById('screen-auth').classList.add('active');
+    document.getElementById('log-btn').style.display='none';
+  }
+});
+
+async function loadFromFirestore(){
+  const snap=await fstore.collection('users').doc(currentUid).get();
+  if(snap.exists){const d=snap.data();db=d.db||{};tabs=d.tabs||null;}
+  else{db={};tabs=null;}
+}
+function saveDB(){
+  if(!currentUid)return;
+  fstore.collection('users').doc(currentUid).set({db,tabs:tabs||[]},{merge:true});
+}
+function saveTabs(){
+  if(!currentUid)return;
+  fstore.collection('users').doc(currentUid).set({tabs,db},{merge:true});
+}
+
+// APP DATA
 const PRESETS=[
   {key:'pornfree', label:'Porn-free',   icon:'🚫', desc:'Stay free from pornography'},
   {key:'exercise', label:'Exercise',    icon:'💪', desc:'Move your body today'},
@@ -220,13 +320,6 @@ const PRESETS=[
 
 let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all';
 let calYear, calMonth, editMode=false, dragSrc=null, selectedDate=null, selectedCalDay=null, lastCalTap={key:null,time:0};
-
-function load(){
-  try{db=JSON.parse(localStorage.getItem('selah-db')||'{}');}catch(e){db={};}
-  try{const t=localStorage.getItem('selah-tabs');tabs=t?JSON.parse(t):null;}catch(e){tabs=null;}
-}
-function saveDB(){localStorage.setItem('selah-db',JSON.stringify(db));}
-function saveTabs(){localStorage.setItem('selah-tabs',JSON.stringify(tabs));}
 
 // ONBOARD
 function initOnboard(){
@@ -255,7 +348,7 @@ function removeOnboardCustom(i){customOnboard.splice(i,1);renderOnboardChips();u
 function updateStartBtn(){document.getElementById('start-btn').disabled=(selectedPresets.length+customOnboard.length)===0;}
 function finishOnboard(){
   tabs=[...PRESETS.filter(p=>selectedPresets.includes(p.key)),...customOnboard];
-  saveTabs();localStorage.setItem('selah-onboarded','1');launchApp();
+  saveTabs();launchApp();
 }
 
 // LAUNCH
@@ -475,10 +568,6 @@ function emoji(v){if(v>=85)return '😄';if(v>=65)return '🙂';if(v>=45)return 
 function fd(k){const[y,m,d]=k.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return `${mn[parseInt(m)-1]} ${parseInt(d)}, ${y}`;}
 function calcStreak(){const t=new Date();let s=0;for(let i=0;i<365;i++){const d=new Date(t);d.setDate(d.getDate()-i);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(db[k])s++;else if(i>0)break;}return s;}
 function calcLongestStreak(){const keys=Object.keys(db).sort();let longest=0,cur=0;keys.forEach((k,i)=>{if(i===0){cur=1;}else{const diff=(new Date(k)-new Date(keys[i-1]))/(864e5);cur=diff===1?cur+1:1;}longest=Math.max(longest,cur);});return longest;}
-
-// INIT
-load();initOnboard();
-if(localStorage.getItem('selah-onboarded')&&tabs&&tabs.length){launchApp();}
 </script>
 </body>
 </html>
