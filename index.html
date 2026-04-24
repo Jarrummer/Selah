@@ -93,10 +93,12 @@ html,body{background:#0d0d0f;font-family:'DM Sans',sans-serif;color:#f0efe8;min-
 .cal-month{font-size:14px;font-weight:500}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-day-name{font-size:10px;color:var(--text3);text-align:center;padding:4px 0;font-family:'DM Mono',monospace}
-.cal-day{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);background:var(--bg3);font-family:'DM Mono',monospace}
-.cal-day.empty{background:transparent}
+.cal-day{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);background:var(--bg3);font-family:'DM Mono',monospace;cursor:pointer;transition:opacity .1s}
+.cal-day:active{opacity:.7}
+.cal-day.empty{background:transparent;cursor:default;pointer-events:none}
 .cal-day.has-data{color:#fff;font-weight:500}
 .cal-day.today{outline:1.5px solid var(--purple);outline-offset:1px;color:var(--text)}
+.cal-day.selected:not(.today){outline:1.5px solid var(--purple-light);outline-offset:1px;color:var(--text)}
 .history-entry{border-left:2px solid var(--border2);padding:8px 12px;margin-bottom:10px}
 .history-entry:last-child{margin-bottom:0}
 .history-date{font-size:11px;color:var(--text3);margin-bottom:3px;font-family:'DM Mono',monospace}
@@ -183,7 +185,7 @@ textarea:focus{border-color:var(--purple)}
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">End-of-day check-in</div>
+      <div class="modal-title" id="modal-title">End-of-day check-in</div>
       <button class="close-btn" onclick="closeModal()">Close</button>
     </div>
     <div id="sliders-container"></div>
@@ -213,7 +215,7 @@ const PRESETS=[
 ];
 
 let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all';
-let calYear, calMonth, editMode=false, dragSrc=null;
+let calYear, calMonth, editMode=false, dragSrc=null, selectedDate=null;
 
 function load(){
   try{db=JSON.parse(localStorage.getItem('selah-db')||'{}');}catch(e){db={};}
@@ -393,9 +395,9 @@ function renderCal(){
   for(let i=0;i<first;i++)html+=`<div class="cal-day empty"></div>`;
   for(let d=1;d<=days;d++){
     const k=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const e=db[k];const isT=k===today;
-    if(e){const c=sc(e.overall);html+=`<div class="cal-day has-data${isT?' today':''}" style="background:${c}33;color:${c};border:1px solid ${c}55">${d}</div>`;}
-    else html+=`<div class="cal-day${isT?' today':''}">${d}</div>`;
+    const e=db[k];const isT=k===today;const isSel=k===selectedDate;
+    if(e){const c=sc(e.overall);html+=`<div class="cal-day has-data${isT?' today':''}${isSel?' selected':''}" style="background:${c}33;color:${c};border:1px solid ${c}55" onclick="openModal('${k}')">${d}</div>`;}
+    else html+=`<div class="cal-day${isT?' today':''}${isSel?' selected':''}" onclick="openModal('${k}')">${d}</div>`;
   }
   const body=document.getElementById('cal-body');if(body)body.innerHTML=html;
 }
@@ -403,9 +405,12 @@ function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal(
 function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
 
 // CHECK-IN
-function openModal(){
+function openModal(dateKey){
+  selectedDate=dateKey||tk();
   document.getElementById('modal').classList.add('open');
-  const today=tk();const ex=db[today]||{};
+  document.getElementById('modal-title').textContent=selectedDate===tk()?'End-of-day check-in':'Check-in: '+fd(selectedDate);
+  const ex=db[selectedDate]||{};
+  renderCal();
   document.getElementById('sliders-container').innerHTML=tabs.map(t=>{
     const val=ex[t.key]!==undefined?ex[t.key]:50;
     return `<div class="slider-block">
@@ -423,7 +428,7 @@ function openModal(){
 function onSlide(key,val){document.getElementById('sv-'+key).textContent=Math.round(val)+'%';document.getElementById('em-'+key).textContent=emoji(parseInt(val));}
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 function saveEntry(){
-  const today=tk();const entry={date:today,journal:document.getElementById('journal-text').value};
+  const today=selectedDate||tk();const entry={date:today,journal:document.getElementById('journal-text').value};
   tabs.forEach(t=>{const el=document.getElementById('sl-'+t.key);if(el)entry[t.key]=parseInt(el.value);});
   const vals=tabs.map(t=>entry[t.key]||0);
   entry.overall=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
