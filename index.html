@@ -169,10 +169,15 @@ textarea:focus{border-color:var(--purple)}
 .panel-nav-label{flex:1;font-size:15px;font-weight:500}
 .panel-nav-chevron{color:var(--text3);font-size:20px;line-height:1}
 .avatar-wrap{display:flex;justify-content:center;padding:2rem 0 1.5rem}
+.header-avatar{width:34px;height:34px;border-radius:50%;background:var(--purple-dark);border:1.5px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;cursor:pointer;overflow:hidden;flex-shrink:0;transition:opacity .15s}
+.header-avatar:active{opacity:.7}
 .avatar-ring{position:relative;display:inline-block;cursor:pointer}
-.avatar{width:76px;height:76px;border-radius:50%;background:var(--purple-dark);border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;letter-spacing:-1px;overflow:hidden;transition:opacity .15s}
+.avatar{width:80px;height:80px;border-radius:50%;background:var(--purple-dark);border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#fff;letter-spacing:-1px;overflow:hidden;transition:opacity .15s}
 .avatar-ring:active .avatar{opacity:.7}
 .avatar-edit-badge{position:absolute;bottom:2px;right:2px;width:22px;height:22px;background:var(--purple);border-radius:50%;border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;pointer-events:none}
+.panel-profile-card{display:flex;flex-direction:column;align-items:center;padding:2rem 1.25rem 1.5rem;border-bottom:1px solid var(--border)}
+.panel-profile-name{font-size:18px;font-weight:600;margin-top:.875rem;text-align:center}
+.panel-profile-email{font-size:12px;color:var(--text2);margin-top:3px;font-family:'DM Mono',monospace;text-align:center;word-break:break-all}
 .panel-section{padding:1.25rem}
 .panel-field-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace;margin-bottom:.5rem;margin-top:1.25rem}
 .panel-field-label:first-child{margin-top:0}
@@ -223,7 +228,7 @@ textarea:focus{border-color:var(--purple)}
     </div>
     <div class="header-btns">
       <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9998;</div>
-      <div class="pen-btn" onclick="openSidePanel()" title="Menu" style="font-size:14px">&#10148;</div>
+      <div class="header-avatar" id="header-avatar" onclick="openSidePanel()">?</div>
     </div>
   </div>
   <div class="edit-panel" id="edit-panel">
@@ -263,9 +268,19 @@ textarea:focus{border-color:var(--purple)}
 
   <!-- HOME -->
   <div id="panel-home" class="panel-view active">
-    <div class="panel-header">
-      <div class="panel-title">Menu</div>
+    <div style="display:flex;justify-content:flex-end;padding:.75rem 1rem 0">
       <button class="close-btn" onclick="closeSidePanel()">✕</button>
+    </div>
+    <div class="panel-profile-card">
+      <div class="avatar-ring" onclick="document.getElementById('pfp-input').click()">
+        <div class="avatar" id="avatar-circle">?</div>
+        <div class="avatar-edit-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+      </div>
+      <input type="file" id="pfp-input" accept="image/*" style="display:none" onchange="handlePfpUpload(this.files[0]);this.value=''">
+      <div class="panel-profile-name" id="panel-profile-name"></div>
+      <div class="panel-profile-email" id="panel-profile-email"></div>
     </div>
     <div class="panel-nav-item" onclick="showPanelView('account')">
       <div class="panel-nav-icon">
@@ -281,6 +296,9 @@ textarea:focus{border-color:var(--purple)}
       <div class="panel-nav-label">Settings</div>
       <div class="panel-nav-chevron">›</div>
     </div>
+    <div style="padding:1.25rem;margin-top:.5rem">
+      <button class="save-btn" style="margin-top:0" onclick="signOut();closeSidePanel()">Sign out</button>
+    </div>
   </div>
 
   <!-- ACCOUNT -->
@@ -289,17 +307,8 @@ textarea:focus{border-color:var(--purple)}
       <button class="panel-back" onclick="showPanelView('home')">‹ Back</button>
       <div class="panel-title">Account</div>
     </div>
-    <div class="avatar-wrap">
-      <div class="avatar-ring" onclick="document.getElementById('pfp-input').click()">
-        <div class="avatar" id="avatar-circle">?</div>
-        <div class="avatar-edit-badge">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        </div>
-      </div>
-      <input type="file" id="pfp-input" accept="image/*" style="display:none" onchange="handlePfpUpload(this.files[0]);this.value=''">
-    </div>
     <div class="panel-section">
-      <div class="panel-field-label">Email</div>
+      <div class="panel-field-label" style="margin-top:0">Email</div>
       <div class="panel-email-val" id="panel-email-val"></div>
 
       <div class="panel-field-label">Username</div>
@@ -315,8 +324,7 @@ textarea:focus{border-color:var(--purple)}
       <button class="add-btn" onclick="changePassword()" style="width:100%;padding:11px;font-size:14px">Update password</button>
 
       <div class="divider"></div>
-      <button class="save-btn" onclick="signOut();closeSidePanel()">Sign out</button>
-      <button class="danger-btn" onclick="deleteAccount()">Delete account</button>
+      <button class="danger-btn" style="margin-top:0" onclick="deleteAccount()">Delete account</button>
     </div>
   </div>
 
@@ -401,6 +409,12 @@ function closeSidePanel(){
 function showPanelView(view){
   document.querySelectorAll('.panel-view').forEach(v=>v.classList.remove('active'));
   document.getElementById('panel-'+view).classList.add('active');
+  if(view==='home'){
+    const user=fauth.currentUser;
+    document.getElementById('panel-profile-name').textContent=username||user?.email?.split('@')[0]||'';
+    document.getElementById('panel-profile-email').textContent=user?.email||'';
+    updateAvatar();
+  }
   if(view==='account'){
     const user=fauth.currentUser;
     if(user)document.getElementById('panel-email-val').textContent=user.email;
@@ -412,13 +426,13 @@ function showPanelView(view){
   }
 }
 function updateAvatar(){
-  const el=document.getElementById('avatar-circle');if(!el)return;
-  if(pfpUrl){
-    el.innerHTML=`<img src="${pfpUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">`;
-  }else{
-    const user=fauth.currentUser;
-    el.textContent=(username||user?.email||'?')[0].toUpperCase();
-  }
+  const user=fauth.currentUser;
+  const initial=(username||user?.email||'?')[0].toUpperCase();
+  const imgHtml=pfpUrl?`<img src="${pfpUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">`:null;
+  const el=document.getElementById('avatar-circle');
+  if(el){el.innerHTML=imgHtml||'';if(!imgHtml)el.textContent=initial;}
+  const hel=document.getElementById('header-avatar');
+  if(hel){hel.innerHTML=imgHtml||'';if(!imgHtml)hel.textContent=initial;}
 }
 async function resizeImage(file,maxPx=400){
   return new Promise(resolve=>{
@@ -496,6 +510,7 @@ fauth.onAuthStateChanged(async user=>{
   if(user){
     currentUid=user.uid;
     await loadFromFirestore();
+    updateAvatar();
     document.getElementById('screen-auth').classList.remove('active');
     if(tabs&&tabs.length){launchApp();}
     else{initOnboard();document.getElementById('screen-onboard').classList.add('active');}
