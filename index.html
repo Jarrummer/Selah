@@ -98,7 +98,11 @@ html,body{background:#0d0d0f;font-family:'DM Sans',sans-serif;color:#f0efe8;min-
 .cal-day.empty{background:transparent;cursor:default;pointer-events:none}
 .cal-day.has-data{color:#fff;font-weight:500}
 .cal-day.today{outline:1.5px solid var(--purple);outline-offset:1px;color:var(--text)}
-.cal-day.selected:not(.today){outline:1.5px solid var(--purple-light);outline-offset:1px;color:var(--text)}
+.cal-day.selected{outline:2px solid var(--purple);outline-offset:2px;color:var(--text)}
+.cal-detail{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+.cal-detail-date{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:.4rem}
+.cal-detail-score{font-size:18px;font-weight:600;margin-bottom:.4rem}
+.cal-detail-hint{font-size:11px;color:var(--text3);margin-top:.6rem;font-family:'DM Mono',monospace}
 .history-entry{border-left:2px solid var(--border2);padding:8px 12px;margin-bottom:10px}
 .history-entry:last-child{margin-bottom:0}
 .history-date{font-size:11px;color:var(--text3);margin-bottom:3px;font-family:'DM Mono',monospace}
@@ -215,7 +219,7 @@ const PRESETS=[
 ];
 
 let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all';
-let calYear, calMonth, editMode=false, dragSrc=null, selectedDate=null;
+let calYear, calMonth, editMode=false, dragSrc=null, selectedDate=null, selectedCalDay=null, lastCalTap={key:null,time:0};
 
 function load(){
   try{db=JSON.parse(localStorage.getItem('selah-db')||'{}');}catch(e){db={};}
@@ -341,6 +345,7 @@ function renderAll(){
       </div>
       <div class="cal-grid">${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-day-name">${d}</div>`).join('')}</div>
       <div class="cal-grid" id="cal-body"></div>
+      <div id="cal-day-detail"></div>
     </div>
     <div class="card">
       <div class="card-title">Journal</div>
@@ -395,9 +400,9 @@ function renderCal(){
   for(let i=0;i<first;i++)html+=`<div class="cal-day empty"></div>`;
   for(let d=1;d<=days;d++){
     const k=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const e=db[k];const isT=k===today;const isSel=k===selectedDate;
-    if(e){const c=sc(e.overall);html+=`<div class="cal-day has-data${isT?' today':''}${isSel?' selected':''}" style="background:${c}33;color:${c};border:1px solid ${c}55" onclick="openModal('${k}')">${d}</div>`;}
-    else html+=`<div class="cal-day${isT?' today':''}${isSel?' selected':''}" onclick="openModal('${k}')">${d}</div>`;
+    const e=db[k];const isT=k===today;const isSel=k===selectedCalDay;
+    if(e){const c=sc(e.overall);html+=`<div class="cal-day has-data${isT?' today':''}${isSel?' selected':''}" style="background:${c}33;color:${c};border:1px solid ${c}55" onclick="calDayTap('${k}')">${d}</div>`;}
+    else html+=`<div class="cal-day${isT?' today':''}${isSel?' selected':''}" onclick="calDayTap('${k}')">${d}</div>`;
   }
   const body=document.getElementById('cal-body');if(body)body.innerHTML=html;
 }
@@ -410,7 +415,6 @@ function openModal(dateKey){
   document.getElementById('modal').classList.add('open');
   document.getElementById('modal-title').textContent=selectedDate===tk()?'End-of-day check-in':'Check-in: '+fd(selectedDate);
   const ex=db[selectedDate]||{};
-  renderCal();
   document.getElementById('sliders-container').innerHTML=tabs.map(t=>{
     const val=ex[t.key]!==undefined?ex[t.key]:50;
     return `<div class="slider-block">
@@ -433,6 +437,32 @@ function saveEntry(){
   const vals=tabs.map(t=>entry[t.key]||0);
   entry.overall=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
   db[today]=entry;saveDB();closeModal();renderSection(activeTab);
+  if(selectedCalDay===today)renderDaySummary(today);
+}
+
+function calDayTap(k){
+  const now=Date.now();
+  if(lastCalTap.key===k&&now-lastCalTap.time<400){lastCalTap={key:null,time:0};openModal(k);}
+  else{lastCalTap={key:k,time:now};selectCalDay(k);}
+}
+function selectCalDay(k){
+  selectedCalDay=k;renderCal();renderDaySummary(k);
+}
+function renderDaySummary(k){
+  const el=document.getElementById('cal-day-detail');if(!el)return;
+  const e=db[k];
+  if(!e){
+    el.innerHTML=`<div class="cal-detail"><div class="cal-detail-date">${fd(k)}</div><div style="font-size:13px;color:var(--text3)">No entry for this day.</div><div class="cal-detail-hint">double-tap to log</div></div>`;
+    return;
+  }
+  const pills=tabs.map(t=>{const v=e[t.key];if(v===undefined)return '';return `<span class="topic-pill" style="background:${sc(v)}22;color:${sc(v)}">${t.label} ${v}%</span>`;}).join('');
+  el.innerHTML=`<div class="cal-detail">
+    <div class="cal-detail-date">${fd(k)}</div>
+    <div class="cal-detail-score" style="color:${sc(e.overall)}">${e.overall}% overall</div>
+    <div class="topic-pills">${pills}</div>
+    ${e.journal?`<div class="history-note" style="margin-top:.5rem">${e.journal}</div>`:''}
+    <div class="cal-detail-hint">double-tap to edit</div>
+  </div>`;
 }
 
 // HELPERS
