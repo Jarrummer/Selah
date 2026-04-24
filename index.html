@@ -169,8 +169,10 @@ textarea:focus{border-color:var(--purple)}
 .panel-nav-label{flex:1;font-size:15px;font-weight:500}
 .panel-nav-chevron{color:var(--text3);font-size:20px;line-height:1}
 .avatar-wrap{display:flex;justify-content:center;padding:2rem 0 1.5rem}
-.avatar{width:76px;height:76px;border-radius:50%;background:var(--purple-dark);border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;letter-spacing:-1px;cursor:pointer;transition:opacity .15s}
-.avatar:active{opacity:.7}
+.avatar-ring{position:relative;display:inline-block;cursor:pointer}
+.avatar{width:76px;height:76px;border-radius:50%;background:var(--purple-dark);border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;letter-spacing:-1px;overflow:hidden;transition:opacity .15s}
+.avatar-ring:active .avatar{opacity:.7}
+.avatar-edit-badge{position:absolute;bottom:2px;right:2px;width:22px;height:22px;background:var(--purple);border-radius:50%;border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;pointer-events:none}
 .panel-section{padding:1.25rem}
 .panel-field-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace;margin-bottom:.5rem;margin-top:1.25rem}
 .panel-field-label:first-child{margin-top:0}
@@ -288,7 +290,13 @@ textarea:focus{border-color:var(--purple)}
       <div class="panel-title">Account</div>
     </div>
     <div class="avatar-wrap">
-      <div class="avatar" id="avatar-circle">?</div>
+      <div class="avatar-ring" onclick="document.getElementById('pfp-input').click()">
+        <div class="avatar" id="avatar-circle">?</div>
+        <div class="avatar-edit-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+      </div>
+      <input type="file" id="pfp-input" accept="image/*" style="display:none" onchange="handlePfpUpload(this.files[0]);this.value=''">
     </div>
     <div class="panel-section">
       <div class="panel-field-label">Email</div>
@@ -326,6 +334,7 @@ textarea:focus{border-color:var(--purple)}
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script>
 // FIREBASE
 firebase.initializeApp({
@@ -394,13 +403,51 @@ function showPanelView(view){
   document.getElementById('panel-'+view).classList.add('active');
   if(view==='account'){
     const user=fauth.currentUser;
-    const initial=(username||user?.email||'?')[0].toUpperCase();
-    document.getElementById('avatar-circle').textContent=initial;
     if(user)document.getElementById('panel-email-val').textContent=user.email;
+    updateAvatar();
     document.getElementById('username-input').value=username||'';
     document.getElementById('current-pw').value='';
     document.getElementById('new-pw').value='';
     document.getElementById('pw-msg').style.display='none';
+  }
+}
+function updateAvatar(){
+  const el=document.getElementById('avatar-circle');if(!el)return;
+  if(pfpUrl){
+    el.innerHTML=`<img src="${pfpUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">`;
+  }else{
+    const user=fauth.currentUser;
+    el.textContent=(username||user?.email||'?')[0].toUpperCase();
+  }
+}
+async function resizeImage(file,maxPx=400){
+  return new Promise(resolve=>{
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const r=Math.min(maxPx/img.width,maxPx/img.height,1);
+      const c=document.createElement('canvas');
+      c.width=img.width*r;c.height=img.height*r;
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(resolve,'image/jpeg',0.85);
+    };
+    img.src=url;
+  });
+}
+async function handlePfpUpload(file){
+  if(!file||!currentUid)return;
+  const el=document.getElementById('avatar-circle');
+  el.innerHTML='<span style="font-size:12px;color:var(--text2)">...</span>';
+  try{
+    const blob=await resizeImage(file);
+    const ref=firebase.storage().ref(`users/${currentUid}/pfp`);
+    await ref.put(blob,{contentType:'image/jpeg'});
+    pfpUrl=await ref.getDownloadURL();
+    await fstore.collection('users').doc(currentUid).set({pfpUrl},{merge:true});
+    updateAvatar();
+  }catch(e){
+    updateAvatar();
+    alert('Upload failed: '+e.message);
   }
 }
 async function saveUsername(){
@@ -462,8 +509,8 @@ fauth.onAuthStateChanged(async user=>{
 
 async function loadFromFirestore(){
   const snap=await fstore.collection('users').doc(currentUid).get();
-  if(snap.exists){const d=snap.data();db=d.db||{};tabs=d.tabs||null;username=d.username||null;}
-  else{db={};tabs=null;username=null;}
+  if(snap.exists){const d=snap.data();db=d.db||{};tabs=d.tabs||null;username=d.username||null;pfpUrl=d.pfpUrl||null;}
+  else{db={};tabs=null;username=null;pfpUrl=null;}
 }
 function saveDB(){
   if(!currentUid)return;
@@ -490,7 +537,7 @@ const PRESETS=[
   {key:'sobriety', label:'Sobriety',    icon:'💎', desc:'Stay sober and clear-headed'},
 ];
 
-let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all', username=null;
+let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all', username=null, pfpUrl=null;
 let calYear, calMonth, editMode=false, dragSrc=null, selectedDate=null, selectedCalDay=null, lastCalTap={key:null,time:0};
 
 // ONBOARD
