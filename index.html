@@ -165,6 +165,9 @@ textarea:focus{border-color:var(--purple)}
   <input class="custom-input" id="auth-email" type="email" placeholder="Email" autocomplete="email" style="width:100%;margin-bottom:8px">
   <input class="custom-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;margin-bottom:0">
   <button class="start-btn" id="auth-btn" onclick="authSubmit()">Sign in</button>
+  <p class="auth-switch" id="auth-forgot-row">
+    <span onclick="forgotPassword()" style="color:var(--text3);cursor:pointer">Forgot password?</span>
+  </p>
   <p class="auth-switch">
     <span id="auth-switch-text">Don't have an account?</span>
     <span onclick="toggleAuthMode()" id="auth-switch-btn">Sign up</span>
@@ -267,7 +270,19 @@ function toggleAuthMode(){
   document.getElementById('auth-btn').textContent=si?'Sign in':'Sign up';
   document.getElementById('auth-switch-text').textContent=si?'Don\'t have an account?':'Already have an account?';
   document.getElementById('auth-switch-btn').textContent=si?'Sign up':'Sign in';
+  document.getElementById('auth-forgot-row').style.display=si?'block':'none';
   document.getElementById('auth-error').style.display='none';
+}
+async function forgotPassword(){
+  const email=document.getElementById('auth-email').value.trim();
+  const errEl=document.getElementById('auth-error');
+  if(!email){errEl.textContent='Enter your email above first.';errEl.style.display='block';return;}
+  try{
+    await fauth.sendPasswordResetEmail(email);
+    errEl.style.color='var(--green)';errEl.textContent='Reset email sent — check your inbox.';errEl.style.display='block';
+  }catch(e){
+    errEl.style.color='var(--red)';errEl.textContent=e.message.replace('Firebase: ','').replace(/ \(auth\/.*?\)/,'');errEl.style.display='block';
+  }
 }
 async function authSubmit(){
   const email=document.getElementById('auth-email').value.trim();
