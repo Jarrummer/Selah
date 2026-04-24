@@ -164,6 +164,7 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 @keyframes stepSquishIn{0%{transform:scaleX(.55) scaleY(.7);opacity:0}60%{transform:scaleX(1.04) scaleY(.97);opacity:1}100%{transform:scaleX(1) scaleY(1);opacity:1}}
 .step-card.out{animation:stepSquishOut .22s ease-in forwards}
 .step-card.in{animation:stepSquishIn .28s ease-out forwards}
+.step-topic-label{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.6rem;font-family:'DM Mono',monospace}
 .step-question{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px;margin-bottom:1.5rem;line-height:1.35;max-width:280px}
 .step-question strong{color:var(--purple-light)}
 .step-emoji{font-size:64px;line-height:1;margin-bottom:.5rem;transition:transform .15s}
@@ -963,7 +964,7 @@ function openModal(dateKey){
   selectedDate=dateKey||tk();
   stepIndex=0;
   const ex=db[selectedDate]||{};
-  stepValues={journal:ex.journal||''};
+  stepValues={journal:ex.journal||'',overall:ex.overall!==undefined?ex.overall:50};
   tabs.forEach(t=>{stepValues[t.key]=ex[t.key]!==undefined?ex[t.key]:50;});
   document.getElementById('modal-title').textContent=selectedDate===tk()?'End-of-day check-in':'Check-in: '+fd(selectedDate);
   document.getElementById('modal').classList.add('open');
@@ -971,7 +972,7 @@ function openModal(dateKey){
 }
 
 function renderStep(animate){
-  const total=tabs.length+1;
+  const total=tabs.length+2; // topics + journal + overall
   const card=document.getElementById('step-card');
   const nextBtn=document.getElementById('step-next');
   const backBtn=document.getElementById('step-back');
@@ -990,18 +991,30 @@ function renderStep(animate){
     if(stepIndex<tabs.length){
       const t=tabs[stepIndex];
       const val=stepValues[t.key];
+      const q=(PRESETS.find(p=>p.key===t.key)||{}).question||'How did your <strong>'+t.label+'</strong> go?';
       card.innerHTML=`
-        <div class="step-question">${(PRESETS.find(p=>p.key===t.key)||{}).question||'How did your <strong>'+t.label+'</strong> go?'}</div>
+        <div class="step-topic-label">${t.icon||'⭐'} ${t.label}</div>
+        <div class="step-question">${q}</div>
         <div class="step-emoji" id="step-emoji">${emoji(val)}</div>
         <div class="step-score-val" id="step-score" style="color:${sc(val)}">${val}%</div>
         <div class="step-slider-wrap">
           <input type="range" min="0" max="100" step="1" value="${val}" id="step-slider" oninput="onStepSlide(this.value)">
         </div>`;
-    } else {
+    } else if(stepIndex===tabs.length){
       card.innerHTML=`
-        <div class="step-journal-label">How'd the day go overall?</div>
+        <div class="step-journal-label">Anything on your mind?</div>
         <textarea id="journal-text" placeholder="Reflect on your day…">${stepValues.journal}</textarea>`;
       setTimeout(()=>{const ta=document.getElementById('journal-text');if(ta)ta.focus();},50);
+    } else {
+      const val=stepValues.overall;
+      card.innerHTML=`
+        <div class="step-topic-label">Overall</div>
+        <div class="step-question">How was your day as a whole?</div>
+        <div class="step-emoji" id="step-emoji">${emoji(val)}</div>
+        <div class="step-score-val" id="step-score" style="color:${sc(val)}">${val}%</div>
+        <div class="step-slider-wrap">
+          <input type="range" min="0" max="100" step="1" value="${val}" id="step-slider" oninput="onStepSlide(this.value)">
+        </div>`;
     }
   }
 
@@ -1022,6 +1035,7 @@ function renderStep(animate){
 function onStepSlide(val){
   const v=parseInt(val);
   if(stepIndex<tabs.length)stepValues[tabs[stepIndex].key]=v;
+  else if(stepIndex===tabs.length+1)stepValues.overall=v;
   const em=document.getElementById('step-emoji');
   const sc_el=document.getElementById('step-score');
   if(em)em.textContent=emoji(v);
@@ -1032,15 +1046,18 @@ function captureStep(){
   if(stepIndex<tabs.length){
     const sl=document.getElementById('step-slider');
     if(sl)stepValues[tabs[stepIndex].key]=parseInt(sl.value);
-  } else {
+  } else if(stepIndex===tabs.length){
     const ta=document.getElementById('journal-text');
     if(ta)stepValues.journal=ta.value;
+  } else {
+    const sl=document.getElementById('step-slider');
+    if(sl)stepValues.overall=parseInt(sl.value);
   }
 }
 
 function stepNext(){
   captureStep();
-  if(stepIndex===tabs.length){saveEntry();return;}
+  if(stepIndex===tabs.length+1){saveEntry();return;}
   stepIndex++;
   renderStep(true);
 }
@@ -1058,8 +1075,7 @@ function saveEntry(){
   const today=selectedDate||tk();
   const entry={date:today,journal:stepValues.journal||''};
   tabs.forEach(t=>{entry[t.key]=stepValues[t.key]!==undefined?stepValues[t.key]:50;});
-  const vals=tabs.map(t=>entry[t.key]||0);
-  entry.overall=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+  entry.overall=stepValues.overall!==undefined?stepValues.overall:Math.round(tabs.map(t=>entry[t.key]||0).reduce((a,b)=>a+b,0)/tabs.length);
   db[today]=entry;saveDB();closeModal();renderSection(activeTab);
   if(selectedCalDay===today)renderDaySummary(today);
 }
