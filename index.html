@@ -240,6 +240,20 @@ textarea:focus{border-color:var(--purple)}
       <button class="close-btn" onclick="closeAccountModal()">Close</button>
     </div>
     <div id="account-email" style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;font-family:'DM Mono',monospace;word-break:break-all"></div>
+
+    <div class="section-label" style="margin-top:0">Username</div>
+    <div style="display:flex;gap:8px;margin-top:.5rem;margin-bottom:1.5rem">
+      <input class="custom-input" id="username-input" placeholder="Add a username..." maxlength="32">
+      <button class="add-btn" onclick="saveUsername()">Save</button>
+    </div>
+
+    <div class="section-label" style="margin-top:0">Change Password</div>
+    <div id="pw-msg" style="display:none;font-size:13px;margin-top:.5rem;padding:8px 10px;border-radius:var(--radius-sm);line-height:1.5"></div>
+    <input class="custom-input" id="current-pw" type="password" placeholder="Current password" style="width:100%;margin-top:.5rem;margin-bottom:8px">
+    <input class="custom-input" id="new-pw" type="password" placeholder="New password (min 6 chars)" style="width:100%;margin-bottom:.75rem">
+    <button class="add-btn" onclick="changePassword()" style="width:100%;padding:11px;font-size:14px">Update password</button>
+
+    <div class="divider"></div>
     <button class="save-btn" onclick="signOut();closeAccountModal()">Sign out</button>
     <button class="danger-btn" onclick="deleteAccount()">Delete account</button>
   </div>
@@ -305,9 +319,40 @@ function signOut(){fauth.signOut();}
 function openAccountModal(){
   const user=fauth.currentUser;
   if(user)document.getElementById('account-email').textContent=user.email;
+  document.getElementById('username-input').value=username||'';
+  document.getElementById('current-pw').value='';
+  document.getElementById('new-pw').value='';
+  document.getElementById('pw-msg').style.display='none';
   document.getElementById('account-modal').classList.add('open');
 }
 function closeAccountModal(){document.getElementById('account-modal').classList.remove('open');}
+async function saveUsername(){
+  const val=document.getElementById('username-input').value.trim();
+  username=val||null;
+  if(currentUid)await fstore.collection('users').doc(currentUid).set({username:username||''},{merge:true});
+  const inp=document.getElementById('username-input');
+  inp.style.borderColor='var(--green)';setTimeout(()=>inp.style.borderColor='',1500);
+}
+async function changePassword(){
+  const curPw=document.getElementById('current-pw').value;
+  const newPw=document.getElementById('new-pw').value;
+  const msg=document.getElementById('pw-msg');
+  msg.style.display='none';
+  if(!curPw||!newPw){showPwMsg('Please fill in both fields.','var(--red)','#E24B4A18');return;}
+  if(newPw.length<6){showPwMsg('New password must be at least 6 characters.','var(--red)','#E24B4A18');return;}
+  try{
+    const user=fauth.currentUser;
+    const cred=firebase.auth.EmailAuthProvider.credential(user.email,curPw);
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(newPw);
+    showPwMsg('Password updated successfully.','var(--green)','#3B9e7518');
+    document.getElementById('current-pw').value='';
+    document.getElementById('new-pw').value='';
+  }catch(e){
+    showPwMsg(e.message.replace('Firebase: ','').replace(/ \(auth\/.*?\)\./,'').replace(/ \(auth\/.*?\)/,''),'var(--red)','#E24B4A18');
+  }
+}
+function showPwMsg(text,color,bg){const m=document.getElementById('pw-msg');m.textContent=text;m.style.color=color;m.style.background=bg;m.style.display='block';}
 async function deleteAccount(){
   if(!confirm('Permanently delete your account and all your data? This cannot be undone.'))return;
   const pass=prompt('Enter your password to confirm deletion:');
@@ -340,8 +385,8 @@ fauth.onAuthStateChanged(async user=>{
 
 async function loadFromFirestore(){
   const snap=await fstore.collection('users').doc(currentUid).get();
-  if(snap.exists){const d=snap.data();db=d.db||{};tabs=d.tabs||null;}
-  else{db={};tabs=null;}
+  if(snap.exists){const d=snap.data();db=d.db||{};tabs=d.tabs||null;username=d.username||null;}
+  else{db={};tabs=null;username=null;}
 }
 function saveDB(){
   if(!currentUid)return;
@@ -368,7 +413,7 @@ const PRESETS=[
   {key:'sobriety', label:'Sobriety',    icon:'💎', desc:'Stay sober and clear-headed'},
 ];
 
-let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all';
+let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all', username=null;
 let calYear, calMonth, editMode=false, dragSrc=null, selectedDate=null, selectedCalDay=null, lastCalTap={key:null,time:0};
 
 // ONBOARD
