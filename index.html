@@ -626,18 +626,18 @@ function saveTabs(){
 
 // APP DATA
 const PRESETS=[
-  {key:'pornfree', label:'Porn-free',   icon:'🚫', desc:'Stay free from pornography'},
-  {key:'exercise', label:'Exercise',    icon:'💪', desc:'Move your body today'},
-  {key:'health',   label:'Health',      icon:'❤️', desc:'Overall physical wellbeing'},
-  {key:'nutrition',label:'Nutrition',   icon:'🥗', desc:'Eat well and nourish yourself'},
-  {key:'prayer',   label:'Prayer',      icon:'🙏', desc:'Connect with God in prayer'},
-  {key:'lust',     label:'Lust',        icon:'🛡️', desc:'Manage lustful thoughts'},
-  {key:'scripture',label:'Scripture',   icon:'📖', desc:'Study the scriptures'},
-  {key:'sleep',    label:'Sleep',       icon:'😴', desc:'Rest and recovery'},
-  {key:'gratitude',label:'Gratitude',   icon:'✨', desc:'Practice thankfulness'},
-  {key:'social',   label:'Social',      icon:'🤝', desc:'Connect with others'},
-  {key:'mindset',  label:'Mindset',     icon:'🧠', desc:'Mental strength and attitude'},
-  {key:'sobriety', label:'Sobriety',    icon:'💎', desc:'Stay sober and clear-headed'},
+  {key:'pornfree', label:'Porn-free',   icon:'🚫', desc:'Stay free from pornography', question:'How was your temptation with porn today? Did you stay free?'},
+  {key:'exercise', label:'Exercise',    icon:'💪', desc:'Move your body today',        question:'Did you move your body today? How was your workout?'},
+  {key:'health',   label:'Health',      icon:'❤️', desc:'Overall physical wellbeing',  question:'How did your body feel today overall?'},
+  {key:'nutrition',label:'Nutrition',   icon:'🥗', desc:'Eat well and nourish yourself',question:'How well did you fuel your body today?'},
+  {key:'prayer',   label:'Prayer',      icon:'🙏', desc:'Connect with God in prayer',  question:'Did you spend time with God in prayer today?'},
+  {key:'lust',     label:'Lust',        icon:'🛡️', desc:'Manage lustful thoughts',     question:'How did you manage lustful thoughts today? Did you guard your heart?'},
+  {key:'scripture',label:'Scripture',   icon:'📖', desc:'Study the scriptures',        question:'Did you open the Word today? What did you take in?'},
+  {key:'sleep',    label:'Sleep',       icon:'😴', desc:'Rest and recovery',           question:'How did you sleep last night? Did you feel rested?'},
+  {key:'gratitude',label:'Gratitude',   icon:'✨', desc:'Practice thankfulness',       question:'Did you practice gratitude today? What stood out?'},
+  {key:'social',   label:'Social',      icon:'🤝', desc:'Connect with others',         question:'How were your connections with people today?'},
+  {key:'mindset',  label:'Mindset',     icon:'🧠', desc:'Mental strength and attitude',question:'How was your headspace today? Did you stay grounded?'},
+  {key:'sobriety', label:'Sobriety',    icon:'💎', desc:'Stay sober and clear-headed', question:'Did you stay sober and clear-headed today?'},
 ];
 
 let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all', username=null, pfpUrl=null;
@@ -991,7 +991,7 @@ function renderStep(animate){
       const t=tabs[stepIndex];
       const val=stepValues[t.key];
       card.innerHTML=`
-        <div class="step-question">How did your <strong>${t.label}</strong> go?</div>
+        <div class="step-question">${t.question||'How did your <strong>'+t.label+'</strong> go?'}</div>
         <div class="step-emoji" id="step-emoji">${emoji(val)}</div>
         <div class="step-score-val" id="step-score" style="color:${sc(val)}">${val}%</div>
         <div class="step-slider-wrap">
