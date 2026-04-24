@@ -150,6 +150,8 @@ textarea:focus{border-color:var(--purple)}
 .save-btn{width:100%;background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);padding:14px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:1rem;transition:background .15s}
 .save-btn:active{background:var(--purple-dark)}
 .divider{height:1px;background:var(--border);margin:1rem 0}
+.danger-btn{width:100%;background:transparent;color:var(--red);border:1px solid #E24B4A44;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:.75rem;transition:background .15s}
+.danger-btn:hover{background:#E24B4A18}
 </style>
 </head>
 <body>
@@ -193,7 +195,7 @@ textarea:focus{border-color:var(--purple)}
     </div>
     <div class="header-btns">
       <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9998;</div>
-      <div class="pen-btn" onclick="signOut()" title="Sign out" style="font-size:14px">&#10148;</div>
+      <div class="pen-btn" onclick="openAccountModal()" title="Account" style="font-size:14px">&#10148;</div>
     </div>
   </div>
   <div class="edit-panel" id="edit-panel">
@@ -224,6 +226,19 @@ textarea:focus{border-color:var(--purple)}
       <textarea id="journal-text" placeholder="How did today go? What are you feeling?"></textarea>
     </div>
     <button class="save-btn" onclick="saveEntry()">Save day</button>
+  </div>
+</div>
+
+<!-- ACCOUNT MODAL -->
+<div class="modal-overlay" id="account-modal">
+  <div class="modal" style="min-height:auto">
+    <div class="modal-header">
+      <div class="modal-title">Account</div>
+      <button class="close-btn" onclick="closeAccountModal()">Close</button>
+    </div>
+    <div id="account-email" style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;font-family:'DM Mono',monospace;word-break:break-all"></div>
+    <button class="save-btn" onclick="signOut();closeAccountModal()">Sign out</button>
+    <button class="danger-btn" onclick="deleteAccount()">Delete account</button>
   </div>
 </div>
 
@@ -272,6 +287,26 @@ async function authSubmit(){
   }
 }
 function signOut(){fauth.signOut();}
+function openAccountModal(){
+  const user=fauth.currentUser;
+  if(user)document.getElementById('account-email').textContent=user.email;
+  document.getElementById('account-modal').classList.add('open');
+}
+function closeAccountModal(){document.getElementById('account-modal').classList.remove('open');}
+async function deleteAccount(){
+  if(!confirm('Permanently delete your account and all your data? This cannot be undone.'))return;
+  const pass=prompt('Enter your password to confirm deletion:');
+  if(!pass)return;
+  try{
+    const user=fauth.currentUser;
+    const cred=firebase.auth.EmailAuthProvider.credential(user.email,pass);
+    await user.reauthenticateWithCredential(cred);
+    await fstore.collection('users').doc(currentUid).delete();
+    await user.delete();
+  }catch(e){
+    alert(e.message.replace('Firebase: ','').replace(/ \(auth\/.*?\)\./,'').replace(/ \(auth\/.*?\)/,''));
+  }
+}
 
 fauth.onAuthStateChanged(async user=>{
   if(user){
