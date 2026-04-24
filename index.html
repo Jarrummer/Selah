@@ -152,6 +152,29 @@ textarea:focus{border-color:var(--purple)}
 .divider{height:1px;background:var(--border);margin:1rem 0}
 .danger-btn{width:100%;background:transparent;color:var(--red);border:1px solid #E24B4A44;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:.75rem;transition:background .15s}
 .danger-btn:hover{background:#E24B4A18}
+
+/* SIDE PANEL */
+.side-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:299;display:none}
+.side-overlay.open{display:block}
+.side-panel{position:fixed;top:0;right:0;width:300px;max-width:88vw;height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:300;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column}
+.side-panel.open{transform:translateX(0)}
+.panel-header{display:flex;align-items:center;padding:1.25rem 1rem 1rem;border-bottom:1px solid var(--border);gap:10px;position:sticky;top:0;background:var(--bg2);z-index:1}
+.panel-title{font-size:16px;font-weight:600;flex:1}
+.panel-back{background:none;border:none;color:var(--purple);font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;font-weight:500}
+.panel-view{display:none}
+.panel-view.active{display:block}
+.panel-nav-item{display:flex;align-items:center;gap:14px;padding:15px 1.25rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
+.panel-nav-item:active{background:var(--bg3)}
+.panel-nav-icon{width:38px;height:38px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text2)}
+.panel-nav-label{flex:1;font-size:15px;font-weight:500}
+.panel-nav-chevron{color:var(--text3);font-size:20px;line-height:1}
+.avatar-wrap{display:flex;justify-content:center;padding:2rem 0 1.5rem}
+.avatar{width:76px;height:76px;border-radius:50%;background:var(--purple-dark);border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;letter-spacing:-1px;cursor:pointer;transition:opacity .15s}
+.avatar:active{opacity:.7}
+.panel-section{padding:1.25rem}
+.panel-field-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace;margin-bottom:.5rem;margin-top:1.25rem}
+.panel-field-label:first-child{margin-top:0}
+.panel-email-val{font-size:13px;color:var(--text2);font-family:'DM Mono',monospace;word-break:break-all;padding:10px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -198,7 +221,7 @@ textarea:focus{border-color:var(--purple)}
     </div>
     <div class="header-btns">
       <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9998;</div>
-      <div class="pen-btn" onclick="openAccountModal()" title="Account" style="font-size:14px">&#10148;</div>
+      <div class="pen-btn" onclick="openSidePanel()" title="Menu" style="font-size:14px">&#10148;</div>
     </div>
   </div>
   <div class="edit-panel" id="edit-panel">
@@ -232,31 +255,72 @@ textarea:focus{border-color:var(--purple)}
   </div>
 </div>
 
-<!-- ACCOUNT MODAL -->
-<div class="modal-overlay" id="account-modal">
-  <div class="modal" style="min-height:auto">
-    <div class="modal-header">
-      <div class="modal-title">Account</div>
-      <button class="close-btn" onclick="closeAccountModal()">Close</button>
+<!-- SIDE PANEL -->
+<div id="side-overlay" class="side-overlay" onclick="closeSidePanel()"></div>
+<div id="side-panel" class="side-panel">
+
+  <!-- HOME -->
+  <div id="panel-home" class="panel-view active">
+    <div class="panel-header">
+      <div class="panel-title">Menu</div>
+      <button class="close-btn" onclick="closeSidePanel()">✕</button>
     </div>
-    <div id="account-email" style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;font-family:'DM Mono',monospace;word-break:break-all"></div>
-
-    <div class="section-label" style="margin-top:0">Username</div>
-    <div style="display:flex;gap:8px;margin-top:.5rem;margin-bottom:1.5rem">
-      <input class="custom-input" id="username-input" placeholder="Add a username..." maxlength="32">
-      <button class="add-btn" onclick="saveUsername()">Save</button>
+    <div class="panel-nav-item" onclick="showPanelView('account')">
+      <div class="panel-nav-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="panel-nav-label">Account</div>
+      <div class="panel-nav-chevron">›</div>
     </div>
-
-    <div class="section-label" style="margin-top:0">Change Password</div>
-    <div id="pw-msg" style="display:none;font-size:13px;margin-top:.5rem;padding:8px 10px;border-radius:var(--radius-sm);line-height:1.5"></div>
-    <input class="custom-input" id="current-pw" type="password" placeholder="Current password" style="width:100%;margin-top:.5rem;margin-bottom:8px">
-    <input class="custom-input" id="new-pw" type="password" placeholder="New password (min 6 chars)" style="width:100%;margin-bottom:.75rem">
-    <button class="add-btn" onclick="changePassword()" style="width:100%;padding:11px;font-size:14px">Update password</button>
-
-    <div class="divider"></div>
-    <button class="save-btn" onclick="signOut();closeAccountModal()">Sign out</button>
-    <button class="danger-btn" onclick="deleteAccount()">Delete account</button>
+    <div class="panel-nav-item" onclick="showPanelView('settings')">
+      <div class="panel-nav-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      <div class="panel-nav-label">Settings</div>
+      <div class="panel-nav-chevron">›</div>
+    </div>
   </div>
+
+  <!-- ACCOUNT -->
+  <div id="panel-account" class="panel-view">
+    <div class="panel-header">
+      <button class="panel-back" onclick="showPanelView('home')">‹ Back</button>
+      <div class="panel-title">Account</div>
+    </div>
+    <div class="avatar-wrap">
+      <div class="avatar" id="avatar-circle">?</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-field-label">Email</div>
+      <div class="panel-email-val" id="panel-email-val"></div>
+
+      <div class="panel-field-label">Username</div>
+      <div style="display:flex;gap:8px;margin-top:.25rem">
+        <input class="custom-input" id="username-input" placeholder="Add a username..." maxlength="32">
+        <button class="add-btn" onclick="saveUsername()">Save</button>
+      </div>
+
+      <div class="panel-field-label" style="margin-top:1.5rem">Change Password</div>
+      <div id="pw-msg" style="display:none;font-size:13px;margin-top:.5rem;margin-bottom:.5rem;padding:8px 10px;border-radius:var(--radius-sm);line-height:1.5"></div>
+      <input class="custom-input" id="current-pw" type="password" placeholder="Current password" style="width:100%;margin-top:.25rem;margin-bottom:8px">
+      <input class="custom-input" id="new-pw" type="password" placeholder="New password (min 6 chars)" style="width:100%;margin-bottom:.75rem">
+      <button class="add-btn" onclick="changePassword()" style="width:100%;padding:11px;font-size:14px">Update password</button>
+
+      <div class="divider"></div>
+      <button class="save-btn" onclick="signOut();closeSidePanel()">Sign out</button>
+      <button class="danger-btn" onclick="deleteAccount()">Delete account</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="panel-settings" class="panel-view">
+    <div class="panel-header">
+      <button class="panel-back" onclick="showPanelView('home')">‹ Back</button>
+      <div class="panel-title">Settings</div>
+    </div>
+    <div class="panel-section" style="color:var(--text3);font-size:13px;padding-top:2rem;text-align:center">Coming soon...</div>
+  </div>
+
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -316,16 +380,29 @@ async function authSubmit(){
   }
 }
 function signOut(){fauth.signOut();}
-function openAccountModal(){
-  const user=fauth.currentUser;
-  if(user)document.getElementById('account-email').textContent=user.email;
-  document.getElementById('username-input').value=username||'';
-  document.getElementById('current-pw').value='';
-  document.getElementById('new-pw').value='';
-  document.getElementById('pw-msg').style.display='none';
-  document.getElementById('account-modal').classList.add('open');
+function openSidePanel(){
+  showPanelView('home');
+  document.getElementById('side-overlay').classList.add('open');
+  document.getElementById('side-panel').classList.add('open');
 }
-function closeAccountModal(){document.getElementById('account-modal').classList.remove('open');}
+function closeSidePanel(){
+  document.getElementById('side-overlay').classList.remove('open');
+  document.getElementById('side-panel').classList.remove('open');
+}
+function showPanelView(view){
+  document.querySelectorAll('.panel-view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('panel-'+view).classList.add('active');
+  if(view==='account'){
+    const user=fauth.currentUser;
+    const initial=(username||user?.email||'?')[0].toUpperCase();
+    document.getElementById('avatar-circle').textContent=initial;
+    if(user)document.getElementById('panel-email-val').textContent=user.email;
+    document.getElementById('username-input').value=username||'';
+    document.getElementById('current-pw').value='';
+    document.getElementById('new-pw').value='';
+    document.getElementById('pw-msg').style.display='none';
+  }
+}
 async function saveUsername(){
   const val=document.getElementById('username-input').value.trim();
   username=val||null;
