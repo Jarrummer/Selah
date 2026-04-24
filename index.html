@@ -125,6 +125,11 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .bar-track{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
 .bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
 .empty-state{font-size:13px;color:var(--text3);text-align:center;padding:2rem 0}
+.journal-preview{padding:10px 12px;border-left:2px solid var(--border2);margin-bottom:8px;cursor:pointer;border-radius:0 var(--radius-sm) var(--radius-sm) 0;transition:background .15s,border-color .15s}
+.journal-preview:last-child{margin-bottom:0}
+.journal-preview.selected{border-left-color:var(--gold);background:rgba(201,151,31,0.07)}
+.journal-preview-text{font-size:13px;color:var(--text2);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.journal-hint{font-size:11px;color:var(--text3);text-align:center;padding:.5rem 0;font-family:'DM Mono',monospace}
 
 /* LOG BUTTON */
 .log-btn{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--purple);color:#fff;border:none;border-radius:100px;padding:14px 32px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;box-shadow:0 4px 24px rgba(127,119,221,.4);z-index:100;white-space:nowrap;transition:transform .15s,background .15s}
@@ -279,6 +284,21 @@ textarea:focus{border-color:var(--purple)}
       <textarea id="journal-text" placeholder="How did today go? What are you feeling?"></textarea>
     </div>
     <button class="save-btn" onclick="saveEntry()">Save day</button>
+  </div>
+</div>
+
+<!-- JOURNAL DETAIL MODAL -->
+<div class="modal-overlay" id="journal-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="jm-date"></div>
+        <div id="jm-score" style="font-size:13px;margin-top:2px;font-family:'DM Mono',monospace"></div>
+      </div>
+      <button class="close-btn" onclick="closeJournalModal()">Close</button>
+    </div>
+    <div id="jm-pills" class="topic-pills" style="margin-bottom:1rem"></div>
+    <div id="jm-body" style="font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap"></div>
   </div>
 </div>
 
@@ -574,6 +594,7 @@ const PRESETS=[
 
 let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all', username=null, pfpUrl=null;
 let calYear, calMonth, editMode=false, dragSrc=null, selectedDate=null, selectedCalDay=null, lastCalTap={key:null,time:0};
+let lastJournalTap={key:null,time:0}, selectedJournalKey=null;
 
 // ONBOARD
 function initOnboard(){
@@ -702,18 +723,53 @@ function renderAll(){
       <div id="all-journal"></div>
     </div>`;
   renderCal();
-  const jel=document.getElementById('all-journal');
-  if(!keys.length){jel.innerHTML='<div class="empty-state">No entries yet.<br>Tap "+ Log today" to start.</div>';return;}
-  jel.innerHTML=keys.slice(0,15).map(k=>{
+  renderJournalPreviews();
+}
+
+function truncate(str,n){return str&&str.length>n?str.slice(0,n)+'…':str;}
+
+function renderJournalPreviews(){
+  const jel=document.getElementById('all-journal');if(!jel)return;
+  const keys=Object.keys(db).filter(k=>db[k].journal).sort().reverse();
+  if(!keys.length){jel.innerHTML='<div class="empty-state">No journal entries yet.</div>';return;}
+  jel.innerHTML=keys.slice(0,20).map(k=>{
     const e=db[k];
-    const pills=tabs.map(t=>{const v=e[t.key];if(v===undefined)return '';return `<span class="topic-pill" style="background:${sc(v)}22;color:${sc(v)}">${t.label} ${v}%</span>`;}).join('');
-    return `<div class="history-entry">
-      <div class="history-date">${fd(k)}</div>
-      <div class="history-score" style="color:${sc(e.overall)}">${e.overall}% overall</div>
-      <div class="topic-pills">${pills}</div>
-      ${e.journal?`<div class="history-note">${e.journal}</div>`:''}
+    const sel=selectedJournalKey===k;
+    return `<div class="journal-preview${sel?' selected':''}" onclick="journalTap('${k}')">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+        <div style="font-size:12px;font-weight:500;color:var(--text2);font-family:'DM Mono',monospace">${fd(k)}</div>
+        <div style="font-size:12px;color:${sc(e.overall)};flex-shrink:0">${e.overall}%</div>
+      </div>
+      <div class="journal-preview-text">${truncate(e.journal,90)}</div>
     </div>`;
-  }).join('');
+  }).join('')+'<div class="journal-hint">tap to select · double-tap to read</div>';
+}
+
+function journalTap(k){
+  const now=Date.now();
+  if(lastJournalTap.key===k&&now-lastJournalTap.time<400){
+    lastJournalTap={key:null,time:0};
+    openJournalEntry(k);
+  } else {
+    lastJournalTap={key:k,time:now};
+    selectedJournalKey=k;
+    renderJournalPreviews();
+  }
+}
+
+function openJournalEntry(k){
+  const e=db[k];if(!e)return;
+  const pills=tabs.map(t=>{const v=e[t.key];if(v===undefined)return '';return `<span class="topic-pill" style="background:${sc(v)}22;color:${sc(v)}">${t.label} ${v}%</span>`;}).join('');
+  document.getElementById('jm-date').textContent=fd(k);
+  document.getElementById('jm-score').textContent=e.overall+'% overall';
+  document.getElementById('jm-score').style.color=sc(e.overall);
+  document.getElementById('jm-pills').innerHTML=pills;
+  document.getElementById('jm-body').textContent=e.journal||'';
+  document.getElementById('journal-modal').classList.add('open');
+}
+
+function closeJournalModal(){
+  document.getElementById('journal-modal').classList.remove('open');
 }
 
 function renderTopic(key){
