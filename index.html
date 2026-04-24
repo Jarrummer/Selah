@@ -13,6 +13,7 @@ html,body{background:#0d0d0f;font-family:'DM Sans',sans-serif;color:#f0efe8;min-
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
   --text:#f0efe8;--text2:#8a8a94;--text3:#555560;
   --purple:#7F77DD;--purple-light:#AFA9EC;--purple-dark:#3C3489;
+  --gold:#C9971F;--gold-light:#E8B84B;--gold-dark:#7A5210;
   --green:#3B9e75;--amber:#EF9F27;--red:#E24B4A;
   --radius:12px;--radius-sm:8px;
 }
@@ -89,12 +90,12 @@ html,body{background:#0d0d0f;font-family:'DM Sans',sans-serif;color:#f0efe8;min-
 .metric{background:var(--bg3);border-radius:var(--radius-sm);padding:.875rem 1rem}
 .metric-label{font-size:11px;color:var(--text2);margin-bottom:4px;font-family:'DM Mono',monospace}
 .metric-val{font-size:24px;font-weight:600;letter-spacing:-.5px}
-.streak-banner{background:var(--purple-dark);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
-.streak-num{font-size:48px;font-weight:600;color:#EEEDFE;letter-spacing:-2px;line-height:1}
-.streak-label{font-size:12px;color:var(--purple-light);font-family:'DM Mono',monospace;margin-top:4px}
+.streak-banner{background:linear-gradient(135deg,#1a1042 0%,#2d1f5e 60%,#3d2200 100%);border:1px solid #C9971F33;border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.streak-num{font-size:48px;font-weight:600;color:var(--gold-light);letter-spacing:-2px;line-height:1}
+.streak-label{font-size:12px;color:var(--gold);font-family:'DM Mono',monospace;margin-top:4px;opacity:.85}
 .streak-right{text-align:right}
-.streak-avg{font-size:22px;font-weight:600;color:#EEEDFE;letter-spacing:-.5px}
-.streak-sub{font-size:13px;color:var(--purple-light)}
+.streak-avg{font-size:22px;font-weight:600;color:var(--gold-light);letter-spacing:-.5px}
+.streak-sub{font-size:13px;color:var(--gold);opacity:.85}
 .cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
 .cal-nav-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:5px 12px;font-size:13px;cursor:pointer}
 .cal-month{font-size:14px;font-weight:500}
@@ -663,9 +664,9 @@ function renderAll(){
     </div>
     <div class="metric-grid">
       <div class="metric"><div class="metric-label">days logged</div><div class="metric-val">${keys.length}</div></div>
-      <div class="metric"><div class="metric-label">best day</div><div class="metric-val" style="color:${sc(best)}">${best}%</div></div>
-      <div class="metric"><div class="metric-label">current streak</div><div class="metric-val">${streak} <span style="font-size:14px;font-weight:400;color:var(--text2)">days</span></div></div>
-      <div class="metric"><div class="metric-label">longest streak</div><div class="metric-val">${longest} <span style="font-size:14px;font-weight:400;color:var(--text2)">days</span></div></div>
+      <div class="metric"><div class="metric-label">best day</div><div class="metric-val" style="color:var(--gold-light)">${best}%</div></div>
+      <div class="metric"><div class="metric-label">current streak</div><div class="metric-val" style="color:var(--gold-light)">${streak} <span style="font-size:14px;font-weight:400;color:var(--gold);opacity:.8">days</span></div></div>
+      <div class="metric"><div class="metric-label">longest streak</div><div class="metric-val" style="color:var(--gold-light)">${longest} <span style="font-size:14px;font-weight:400;color:var(--gold);opacity:.8">days</span></div></div>
     </div>
     <div class="card">
       <div class="cal-nav">
