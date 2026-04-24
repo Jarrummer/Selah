@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Selah</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:#0d0d0f;font-family:'DM Sans',sans-serif;color:#f0efe8;min-height:100vh;max-width:480px;margin:0 auto;overflow-x:hidden}
+:root{
+  --bg:#0d0d0f;--bg2:#141416;--bg3:#1c1c20;--bg4:#242428;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0efe8;--text2:#8a8a94;--text3:#555560;
+  --purple:#7F77DD;--purple-light:#AFA9EC;--purple-dark:#3C3489;
+  --green:#3B9e75;--amber:#EF9F27;--red:#E24B4A;
+  --radius:12px;--radius-sm:8px;
+}
+
+.screen{display:none;min-height:100vh;padding-bottom:80px}
+.screen.active{display:block}
+
+/* ONBOARDING */
+#screen-onboard{padding:2rem 1.25rem 6rem}
+.logo{font-size:36px;font-weight:600;letter-spacing:-1px;margin-bottom:6px}
+.logo span{color:var(--purple)}
+.logo-sub{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:2rem}
+.section-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;margin-top:1.25rem}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.5rem}
+.chip{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;text-align:left;line-height:1.4;font-family:'DM Sans',sans-serif}
+.chip:hover{border-color:var(--purple);color:var(--text)}
+.chip.selected{background:#3C348922;border-color:var(--purple);color:var(--purple-light)}
+.chip-icon{font-size:16px;margin-bottom:4px;display:block}
+.custom-row{display:flex;gap:8px;margin-top:.75rem}
+.custom-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;outline:none}
+.custom-input::placeholder{color:var(--text3)}
+.custom-input:focus{border-color:var(--purple)}
+.add-btn{background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.custom-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.custom-chip{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.custom-chip-x{cursor:pointer;color:var(--red);font-size:14px;line-height:1}
+.start-btn{width:100%;background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);padding:15px;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:2rem;transition:background .15s}
+.start-btn:active{background:var(--purple-dark)}
+.start-btn:disabled{background:var(--bg4);color:var(--text3);cursor:not-allowed}
+
+/* APP HEADER */
+#screen-app{display:none;flex-direction:column;min-height:100vh}
+#screen-app.active{display:flex}
+.app-header{padding:1.25rem 1.25rem .75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:20}
+.app-title{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.app-date{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px}
+.pen-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
+.pen-btn.active-edit{border-color:var(--purple);color:var(--purple)}
+
+/* TAB BAR */
+.tab-bar{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);scrollbar-width:none;padding:0 1rem;flex-shrink:0;position:sticky;top:57px;background:var(--bg);z-index:19}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{padding:10px 14px;font-size:13px;font-weight:500;color:var(--text2);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s;font-family:'DM Sans',sans-serif}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--purple)}
+.tab-btn:hover{color:var(--text)}
+
+/* EDIT PANEL */
+.edit-panel{display:none;background:var(--bg2);border-bottom:1px solid var(--border2);padding:1rem 1.25rem}
+.edit-panel.open{display:block}
+.edit-panel-title{font-size:12px;color:var(--text2);margin-bottom:.75rem;font-family:'DM Mono',monospace}
+.drag-list{list-style:none}
+.drag-item{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;cursor:grab;user-select:none;transition:border-color .15s}
+.drag-item:active{cursor:grabbing}
+.drag-item.dragging{opacity:.4}
+.drag-item.drag-over{border-color:var(--purple)}
+.drag-handle{color:var(--text3);font-size:18px;flex-shrink:0;cursor:grab;line-height:1}
+.drag-label{flex:1;font-size:14px;color:var(--text)}
+.drag-delete{color:var(--red);background:none;border:none;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;font-family:'DM Sans',sans-serif}
+.edit-add-row{display:flex;gap:8px;margin-top:.75rem}
+
+/* SECTIONS */
+.section{display:none;padding:1.25rem}
+.section.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem}
+.card-title{font-size:13px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;font-family:'DM Mono',monospace}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.metric{background:var(--bg3);border-radius:var(--radius-sm);padding:.875rem 1rem}
+.metric-label{font-size:11px;color:var(--text2);margin-bottom:4px;font-family:'DM Mono',monospace}
+.metric-val{font-size:24px;font-weight:600;letter-spacing:-.5px}
+.streak-banner{background:var(--purple-dark);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.streak-num{font-size:48px;font-weight:600;color:#EEEDFE;letter-spacing:-2px;line-height:1}
+.streak-label{font-size:12px;color:var(--purple-light);font-family:'DM Mono',monospace;margin-top:4px}
+.streak-right{text-align:right}
+.streak-avg{font-size:22px;font-weight:600;color:#EEEDFE;letter-spacing:-.5px}
+.streak-sub{font-size:13px;color:var(--purple-light)}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+.cal-nav-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:5px 12px;font-size:13px;cursor:pointer}
+.cal-month{font-size:14px;font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day-name{font-size:10px;color:var(--text3);text-align:center;padding:4px 0;font-family:'DM Mono',monospace}
+.cal-day{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);background:var(--bg3);font-family:'DM Mono',monospace}
+.cal-day.empty{background:transparent}
+.cal-day.has-data{color:#fff;font-weight:500}
+.cal-day.today{outline:1.5px solid var(--purple);outline-offset:1px;color:var(--text)}
+.history-entry{border-left:2px solid var(--border2);padding:8px 12px;margin-bottom:10px}
+.history-entry:last-child{margin-bottom:0}
+.history-date{font-size:11px;color:var(--text3);margin-bottom:3px;font-family:'DM Mono',monospace}
+.history-score{font-size:14px;font-weight:500}
+.history-note{font-size:13px;color:var(--text2);margin-top:4px;line-height:1.5}
+.topic-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.topic-pill{font-size:11px;padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace;font-weight:500}
+.bar-wrap{margin-bottom:10px}
+.bar-wrap:last-child{margin-bottom:0}
+.bar-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:5px;font-family:'DM Mono',monospace}
+.bar-track{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.empty-state{font-size:13px;color:var(--text3);text-align:center;padding:2rem 0}
+
+/* LOG BUTTON */
+.log-btn{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--purple);color:#fff;border:none;border-radius:100px;padding:14px 32px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;box-shadow:0 4px 24px rgba(127,119,221,.4);z-index:100;white-space:nowrap;transition:transform .15s,background .15s}
+.log-btn:active{transform:translateX(-50%) scale(.97);background:var(--purple-dark)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-overlay.open{display:block}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius) var(--radius) 0 0;padding:1.25rem;margin-top:60px;min-height:calc(100vh - 60px)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.modal-title{font-size:18px;font-weight:600}
+.close-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);padding:6px 12px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.slider-block{margin-bottom:1.5rem}
+.slider-topic-label{font-size:14px;font-weight:500;margin-bottom:2px}
+.slider-topic-desc{font-size:12px;color:var(--text2);margin-bottom:10px}
+.emoji-display{font-size:36px;text-align:center;margin-bottom:6px;line-height:1;transition:all .2s}
+.slider-row{display:flex;align-items:center;gap:10px}
+.pct-val{font-size:13px;font-weight:500;min-width:38px;text-align:right;font-family:'DM Mono',monospace}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:4px;background:var(--bg4);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--purple);cursor:pointer;border:2px solid var(--bg2)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--purple);cursor:pointer;border:2px solid var(--bg2)}
+textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;min-height:90px;resize:vertical;outline:none;line-height:1.5}
+textarea::placeholder{color:var(--text3)}
+textarea:focus{border-color:var(--purple)}
+.save-btn{width:100%;background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);padding:14px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:1rem;transition:background .15s}
+.save-btn:active{background:var(--purple-dark)}
+.divider{height:1px;background:var(--border);margin:1rem 0}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="screen-onboard" class="screen active">
+  <div class="logo">Se<span>l</span>ah</div>
+  <p class="logo-sub">Pause. Reflect. Grow.<br>Pick the areas you want to work on.</p>
+  <div class="section-label">Growth areas</div>
+  <div class="preset-grid" id="preset-grid"></div>
+  <div class="section-label">Add your own</div>
+  <div class="custom-row">
+    <input class="custom-input" id="custom-input" placeholder="e.g. Gratitude, Sleep..." maxlength="24">
+    <button class="add-btn" onclick="addCustomOnboard()">Add</button>
+  </div>
+  <div class="custom-chips" id="custom-chips"></div>
+  <button class="start-btn" id="start-btn" onclick="finishOnboard()" disabled>Get started</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="screen-app" class="screen">
+  <div class="app-header">
+    <div>
+      <div class="app-title">Selah</div>
+      <div class="app-date" id="header-date"></div>
+    </div>
+    <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9998;</div>
+  </div>
+  <div class="edit-panel" id="edit-panel">
+    <div class="edit-panel-title">&#9776; drag to reorder &nbsp;&nbsp; &times; to remove</div>
+    <ul class="drag-list" id="drag-list"></ul>
+    <div class="edit-add-row">
+      <input class="custom-input" id="edit-add-input" placeholder="Add a new tab..." maxlength="24" style="font-size:13px;padding:8px 10px">
+      <button class="add-btn" onclick="editAddTab()" style="font-size:13px;padding:8px 12px">Add</button>
+    </div>
+  </div>
+  <div class="tab-bar" id="tab-bar"></div>
+  <div id="sections-wrap"></div>
+</div>
+
+<button class="log-btn" id="log-btn" style="display:none" onclick="openModal()">+ Log today</button>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">End-of-day check-in</div>
+      <button class="close-btn" onclick="closeModal()">Close</button>
+    </div>
+    <div id="sliders-container"></div>
+    <div class="divider"></div>
+    <div style="margin-bottom:1rem">
+      <div style="font-size:14px;font-weight:500;margin-bottom:8px">Overall journal</div>
+      <textarea id="journal-text" placeholder="How did today go? What are you feeling?"></textarea>
+    </div>
+    <button class="save-btn" onclick="saveEntry()">Save day</button>
+  </div>
+</div>
+
+<script>
+const PRESETS=[
+  {key:'pornfree', label:'Porn-free',   icon:'🚫', desc:'Stay free from pornography'},
+  {key:'exercise', label:'Exercise',    icon:'💪', desc:'Move your body today'},
+  {key:'health',   label:'Health',      icon:'❤️', desc:'Overall physical wellbeing'},
+  {key:'nutrition',label:'Nutrition',   icon:'🥗', desc:'Eat well and nourish yourself'},
+  {key:'prayer',   label:'Prayer',      icon:'🙏', desc:'Connect with God in prayer'},
+  {key:'lust',     label:'Lust',        icon:'🛡️', desc:'Manage lustful thoughts'},
+  {key:'scripture',label:'Scripture',   icon:'📖', desc:'Study the scriptures'},
+  {key:'sleep',    label:'Sleep',       icon:'😴', desc:'Rest and recovery'},
+  {key:'gratitude',label:'Gratitude',   icon:'✨', desc:'Practice thankfulness'},
+  {key:'social',   label:'Social',      icon:'🤝', desc:'Connect with others'},
+  {key:'mindset',  label:'Mindset',     icon:'🧠', desc:'Mental strength and attitude'},
+  {key:'sobriety', label:'Sobriety',    icon:'💎', desc:'Stay sober and clear-headed'},
+];
+
+let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all';
+let calYear, calMonth, editMode=false, dragSrc=null;
+
+function load(){
+  try{db=JSON.parse(localStorage.getItem('selah-db')||'{}');}catch(e){db={};}
+  try{const t=localStorage.getItem('selah-tabs');tabs=t?JSON.parse(t):null;}catch(e){tabs=null;}
+}
+function saveDB(){localStorage.setItem('selah-db',JSON.stringify(db));}
+function saveTabs(){localStorage.setItem('selah-tabs',JSON.stringify(tabs));}
+
+// ONBOARD
+function initOnboard(){
+  document.getElementById('preset-grid').innerHTML=PRESETS.map(p=>
+    `<button class="chip" data-key="${p.key}" onclick="togglePreset('${p.key}',this)"><span class="chip-icon">${p.icon}</span>${p.label}</button>`
+  ).join('');
+}
+function togglePreset(key,el){
+  if(selectedPresets.includes(key)){selectedPresets=selectedPresets.filter(k=>k!==key);el.classList.remove('selected');}
+  else{selectedPresets.push(key);el.classList.add('selected');}
+  updateStartBtn();
+}
+function addCustomOnboard(){
+  const inp=document.getElementById('custom-input');
+  const val=inp.value.trim();if(!val)return;
+  customOnboard.push({key:'custom_'+Date.now(),label:val,icon:'⭐',desc:val});
+  inp.value='';renderOnboardChips();updateStartBtn();
+}
+document.getElementById('custom-input').addEventListener('keydown',e=>{if(e.key==='Enter')addCustomOnboard();});
+function renderOnboardChips(){
+  document.getElementById('custom-chips').innerHTML=customOnboard.map((t,i)=>
+    `<div class="custom-chip">${t.label}<span class="custom-chip-x" onclick="removeOnboardCustom(${i})">×</span></div>`
+  ).join('');
+}
+function removeOnboardCustom(i){customOnboard.splice(i,1);renderOnboardChips();updateStartBtn();}
+function updateStartBtn(){document.getElementById('start-btn').disabled=(selectedPresets.length+customOnboard.length)===0;}
+function finishOnboard(){
+  tabs=[...PRESETS.filter(p=>selectedPresets.includes(p.key)),...customOnboard];
+  saveTabs();localStorage.setItem('selah-onboarded','1');launchApp();
+}
+
+// LAUNCH
+function launchApp(){
+  document.getElementById('screen-onboard').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  document.getElementById('log-btn').style.display='block';
+  document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const now=new Date();
+  if(calYear===undefined){calYear=now.getFullYear();calMonth=now.getMonth();}
+  renderTabBar();renderSection('all');
+}
+
+// TABS
+function renderTabBar(){
+  document.getElementById('tab-bar').innerHTML=
+    `<button class="tab-btn${activeTab==='all'?' active':''}" onclick="switchTab('all',this)">All</button>`+
+    tabs.map(t=>`<button class="tab-btn${activeTab===t.key?' active':''}" onclick="switchTab('${t.key}',this)">${t.label}</button>`).join('');
+}
+function switchTab(key,el){
+  if(editMode)return;
+  activeTab=key;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderSection(key);
+}
+
+// EDIT MODE
+function toggleEditMode(){
+  editMode=!editMode;
+  const panel=document.getElementById('edit-panel');
+  const btn=document.getElementById('pen-btn');
+  if(editMode){panel.classList.add('open');btn.classList.add('active-edit');renderDragList();}
+  else{panel.classList.remove('open');btn.classList.remove('active-edit');saveTabs();renderTabBar();}
+}
+function renderDragList(){
+  document.getElementById('drag-list').innerHTML=tabs.map((t,i)=>
+    `<li class="drag-item" draggable="true" data-i="${i}"
+      ondragstart="dStart(event,${i})" ondragover="dOver(event,${i})"
+      ondrop="dDrop(event,${i})" ondragend="dEnd()">
+      <span class="drag-handle">&#9776;</span>
+      <span class="drag-label">${t.icon||'⭐'} ${t.label}</span>
+      <button class="drag-delete" onclick="delTab(${i})">×</button>
+    </li>`
+  ).join('');
+}
+function dStart(e,i){dragSrc=i;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function dOver(e,i){e.preventDefault();document.querySelectorAll('.drag-item').forEach(el=>el.classList.remove('drag-over'));e.currentTarget.classList.add('drag-over');}
+function dDrop(e,i){e.preventDefault();if(dragSrc===null||dragSrc===i)return;const m=tabs.splice(dragSrc,1)[0];tabs.splice(i,0,m);dragSrc=null;renderDragList();}
+function dEnd(){document.querySelectorAll('.drag-item').forEach(el=>el.classList.remove('dragging','drag-over'));dragSrc=null;}
+function delTab(i){if(tabs.length<=1)return;if(activeTab===tabs[i].key)activeTab='all';tabs.splice(i,1);renderDragList();}
+function editAddTab(){
+  const inp=document.getElementById('edit-add-input');
+  const val=inp.value.trim();if(!val)return;
+  tabs.push({key:'custom_'+Date.now(),label:val,icon:'⭐',desc:val});
+  inp.value='';renderDragList();
+}
+document.getElementById('edit-add-input').addEventListener('keydown',e=>{if(e.key==='Enter')editAddTab();});
+
+// SECTIONS
+function renderSection(key){
+  const wrap=document.getElementById('sections-wrap');
+  wrap.innerHTML=`<div class="section active" id="sec-main"></div>`;
+  if(key==='all')renderAll();else renderTopic(key);
+}
+
+function renderAll(){
+  const el=document.getElementById('sec-main');
+  const keys=Object.keys(db).sort().reverse();
+  const avg=keys.length?Math.round(keys.reduce((a,k)=>a+(db[k].overall||0),0)/keys.length):0;
+  const streak=calcStreak();
+  const best=keys.length?Math.max(...keys.map(k=>db[k].overall||0)):0;
+  el.innerHTML=`
+    <div class="streak-banner">
+      <div><div class="streak-num">${streak}</div><div class="streak-label">day streak</div></div>
+      <div class="streak-right"><div class="streak-avg">${avg}%</div><div class="streak-sub">avg score</div></div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">days logged</div><div class="metric-val">${keys.length}</div></div>
+      <div class="metric"><div class="metric-label">best day</div><div class="metric-val" style="color:${sc(best)}">${best}%</div></div>
+    </div>
+    <div class="card">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="prevMonth()">←</button>
+        <div class="cal-month" id="cal-label"></div>
+        <button class="cal-nav-btn" onclick="nextMonth()">→</button>
+      </div>
+      <div class="cal-grid">${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-day-name">${d}</div>`).join('')}</div>
+      <div class="cal-grid" id="cal-body"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Journal</div>
+      <div id="all-journal"></div>
+    </div>`;
+  renderCal();
+  const jel=document.getElementById('all-journal');
+  if(!keys.length){jel.innerHTML='<div class="empty-state">No entries yet.<br>Tap "+ Log today" to start.</div>';return;}
+  jel.innerHTML=keys.slice(0,15).map(k=>{
+    const e=db[k];
+    const pills=tabs.map(t=>{const v=e[t.key];if(v===undefined)return '';return `<span class="topic-pill" style="background:${sc(v)}22;color:${sc(v)}">${t.label} ${v}%</span>`;}).join('');
+    return `<div class="history-entry">
+      <div class="history-date">${fd(k)}</div>
+      <div class="history-score" style="color:${sc(e.overall)}">${e.overall}% overall</div>
+      <div class="topic-pills">${pills}</div>
+      ${e.journal?`<div class="history-note">${e.journal}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderTopic(key){
+  const t=tabs.find(x=>x.key===key);if(!t)return;
+  const el=document.getElementById('sec-main');
+  const keys=Object.keys(db).filter(k=>db[k][key]!==undefined).sort().reverse();
+  const vals=keys.map(k=>db[k][key]);
+  const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+  const best=vals.length?Math.max(...vals):0;
+  const trend=vals.length>=2?(vals[0]-vals[1]):null;
+  el.innerHTML=`
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">avg score</div><div class="metric-val" style="color:${sc(avg)}">${avg}%</div></div>
+      <div class="metric"><div class="metric-label">days logged</div><div class="metric-val">${keys.length}</div></div>
+      <div class="metric"><div class="metric-label">best day</div><div class="metric-val" style="color:${sc(best)}">${best}%</div></div>
+      <div class="metric"><div class="metric-label">trend</div><div class="metric-val" style="color:${trend===null?'var(--text2)':trend>=0?'var(--green)':'var(--red)'}">${trend===null?'—':(trend>=0?'+':'')+trend+'%'}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Recent days</div>
+      ${keys.slice(0,7).map(k=>{const v=db[k][key];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div></div>`;}).join('')||'<div class="empty-state">No data yet.</div>'}
+    </div>
+    <div class="card">
+      <div class="card-title">Journal notes</div>
+      ${keys.slice(0,12).filter(k=>db[k].journal).map(k=>`<div class="history-entry"><div class="history-date">${fd(k)}</div><div class="history-note">${db[k].journal}</div></div>`).join('')||'<div class="empty-state">No journal entries yet.</div>'}
+    </div>`;
+}
+
+function renderCal(){
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const lbl=document.getElementById('cal-label');if(lbl)lbl.textContent=`${months[calMonth]} ${calYear}`;
+  const first=new Date(calYear,calMonth,1).getDay();
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  const today=tk();let html='';
+  for(let i=0;i<first;i++)html+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const k=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const e=db[k];const isT=k===today;
+    if(e){const c=sc(e.overall);html+=`<div class="cal-day has-data${isT?' today':''}" style="background:${c}33;color:${c};border:1px solid ${c}55">${d}</div>`;}
+    else html+=`<div class="cal-day${isT?' today':''}">${d}</div>`;
+  }
+  const body=document.getElementById('cal-body');if(body)body.innerHTML=html;
+}
+function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
+
+// CHECK-IN
+function openModal(){
+  document.getElementById('modal').classList.add('open');
+  const today=tk();const ex=db[today]||{};
+  document.getElementById('sliders-container').innerHTML=tabs.map(t=>{
+    const val=ex[t.key]!==undefined?ex[t.key]:50;
+    return `<div class="slider-block">
+      <div class="slider-topic-label">${t.icon||'⭐'} ${t.label}</div>
+      <div class="slider-topic-desc">${t.desc||t.label}</div>
+      <div class="emoji-display" id="em-${t.key}">${emoji(val)}</div>
+      <div class="slider-row">
+        <input type="range" min="0" max="100" step="1" value="${val}" id="sl-${t.key}" oninput="onSlide('${t.key}',this.value)">
+        <span class="pct-val" id="sv-${t.key}">${val}%</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('journal-text').value=ex.journal||'';
+}
+function onSlide(key,val){document.getElementById('sv-'+key).textContent=Math.round(val)+'%';document.getElementById('em-'+key).textContent=emoji(parseInt(val));}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+function saveEntry(){
+  const today=tk();const entry={date:today,journal:document.getElementById('journal-text').value};
+  tabs.forEach(t=>{const el=document.getElementById('sl-'+t.key);if(el)entry[t.key]=parseInt(el.value);});
+  const vals=tabs.map(t=>entry[t.key]||0);
+  entry.overall=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+  db[today]=entry;saveDB();closeModal();renderSection(activeTab);
+}
+
+// HELPERS
+function tk(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function sc(s){if(s>=80)return '#3B9e75';if(s>=60)return '#639922';if(s>=40)return '#EF9F27';if(s>=20)return '#D85A30';return '#E24B4A';}
+function emoji(v){if(v>=85)return '😄';if(v>=65)return '🙂';if(v>=45)return '😐';if(v>=25)return '😕';return '😞';}
+function fd(k){const[y,m,d]=k.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return `${mn[parseInt(m)-1]} ${parseInt(d)}, ${y}`;}
+function calcStreak(){const t=new Date();let s=0;for(let i=0;i<365;i++){const d=new Date(t);d.setDate(d.getDate()-i);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(db[k])s++;else if(i>0)break;}return s;}
+
+// INIT
+load();initOnboard();
+if(localStorage.getItem('selah-onboarded')&&tabs&&tabs.length){launchApp();}
+</script>
+</body>
+</html>
