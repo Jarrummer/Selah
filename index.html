@@ -991,7 +991,7 @@ function renderStep(animate){
       const t=tabs[stepIndex];
       const val=stepValues[t.key];
       card.innerHTML=`
-        <div class="step-question">${t.question||'How did your <strong>'+t.label+'</strong> go?'}</div>
+        <div class="step-question">${(PRESETS.find(p=>p.key===t.key)||{}).question||'How did your <strong>'+t.label+'</strong> go?'}</div>
         <div class="step-emoji" id="step-emoji">${emoji(val)}</div>
         <div class="step-score-val" id="step-score" style="color:${sc(val)}">${val}%</div>
         <div class="step-slider-wrap">
