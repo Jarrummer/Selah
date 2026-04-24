@@ -158,12 +158,31 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
 .modal-title{font-size:18px;font-weight:600}
 .close-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);padding:6px 12px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
-.slider-block{margin-bottom:1.5rem}
-.slider-topic-label{font-size:14px;font-weight:500;margin-bottom:2px}
-.slider-topic-desc{font-size:12px;color:var(--text2);margin-bottom:10px}
-.emoji-display{font-size:36px;text-align:center;margin-bottom:6px;line-height:1;transition:all .2s}
-.slider-row{display:flex;align-items:center;gap:10px}
-.pct-val{font-size:13px;font-weight:500;min-width:38px;text-align:right;font-family:'DM Mono',monospace}
+/* STEP MODAL */
+.step-card{min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem 0 .5rem;text-align:center}
+@keyframes stepSquishOut{0%{transform:scaleX(1) scaleY(1);opacity:1}50%{transform:scaleX(.55) scaleY(.7);opacity:.4}100%{transform:scaleX(.55) scaleY(.7);opacity:0}}
+@keyframes stepSquishIn{0%{transform:scaleX(.55) scaleY(.7);opacity:0}60%{transform:scaleX(1.04) scaleY(.97);opacity:1}100%{transform:scaleX(1) scaleY(1);opacity:1}}
+.step-card.out{animation:stepSquishOut .22s ease-in forwards}
+.step-card.in{animation:stepSquishIn .28s ease-out forwards}
+.step-question{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px;margin-bottom:1.5rem;line-height:1.35;max-width:280px}
+.step-question strong{color:var(--purple-light)}
+.step-emoji{font-size:64px;line-height:1;margin-bottom:.5rem;transition:transform .15s}
+.step-score-val{font-size:32px;font-weight:700;letter-spacing:-1px;font-family:'DM Sans',sans-serif;margin-bottom:1.5rem;transition:color .2s}
+.step-slider-wrap{width:100%;padding:0 .25rem}
+.step-dots{display:flex;justify-content:center;gap:7px;padding:.75rem 0}
+.step-dot{width:7px;height:7px;border-radius:50%;background:var(--bg4);transition:background .2s,transform .2s}
+.step-dot.done{background:var(--purple-dark)}
+.step-dot.active{background:var(--purple);transform:scale(1.35)}
+.step-nav{display:flex;justify-content:space-between;align-items:center;padding:.25rem 0 .5rem;gap:8px}
+.step-back-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);padding:11px 20px;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:color .15s}
+.step-back-btn:active{color:var(--text)}
+.step-next-btn{flex:1;background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);padding:12px 20px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s}
+.step-next-btn:active{background:var(--purple-dark)}
+.step-next-btn.save{background:var(--gold);color:#0d0d0f}
+.step-next-btn.save:active{background:var(--gold-dark);color:#fff}
+.step-journal-label{font-size:20px;font-weight:600;color:var(--text);margin-bottom:1rem;align-self:flex-start}
+.step-card textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;min-height:120px;resize:vertical;outline:none;line-height:1.5;text-align:left}
+.step-card textarea:focus{border-color:var(--purple)}
 input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:4px;background:var(--bg4);border-radius:2px;outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--purple);cursor:pointer;border:2px solid var(--bg2)}
 input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--purple);cursor:pointer;border:2px solid var(--bg2)}
@@ -293,13 +312,12 @@ textarea:focus{border-color:var(--purple)}
       <div class="modal-title" id="modal-title">End-of-day check-in</div>
       <button class="close-btn" onclick="closeModal()">Close</button>
     </div>
-    <div id="sliders-container"></div>
-    <div class="divider"></div>
-    <div style="margin-bottom:1rem">
-      <div style="font-size:14px;font-weight:500;margin-bottom:8px">Overall journal</div>
-      <textarea id="journal-text" placeholder="How did today go? What are you feeling?"></textarea>
+    <div id="step-card" class="step-card"></div>
+    <div id="step-dots" class="step-dots"></div>
+    <div class="step-nav">
+      <button id="step-back" class="step-back-btn" onclick="stepBack()">← Back</button>
+      <button id="step-next" class="step-next-btn" onclick="stepNext()">Next →</button>
     </div>
-    <button class="save-btn" onclick="saveEntry()">Save day</button>
   </div>
 </div>
 
@@ -939,30 +957,107 @@ function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal(
 function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
 
 // CHECK-IN
+let stepIndex=0, stepValues={};
+
 function openModal(dateKey){
   selectedDate=dateKey||tk();
-  document.getElementById('modal').classList.add('open');
-  document.getElementById('modal-title').textContent=selectedDate===tk()?'End-of-day check-in':'Check-in: '+fd(selectedDate);
+  stepIndex=0;
   const ex=db[selectedDate]||{};
-  document.getElementById('sliders-container').innerHTML=tabs.map(t=>{
-    const val=ex[t.key]!==undefined?ex[t.key]:50;
-    return `<div class="slider-block">
-      <div class="slider-topic-label">${t.icon||'⭐'} ${t.label}</div>
-      <div class="slider-topic-desc">${t.desc||t.label}</div>
-      <div class="emoji-display" id="em-${t.key}">${emoji(val)}</div>
-      <div class="slider-row">
-        <input type="range" min="0" max="100" step="1" value="${val}" id="sl-${t.key}" oninput="onSlide('${t.key}',this.value)">
-        <span class="pct-val" id="sv-${t.key}">${val}%</span>
-      </div>
-    </div>`;
-  }).join('');
-  document.getElementById('journal-text').value=ex.journal||'';
+  stepValues={journal:ex.journal||''};
+  tabs.forEach(t=>{stepValues[t.key]=ex[t.key]!==undefined?ex[t.key]:50;});
+  document.getElementById('modal-title').textContent=selectedDate===tk()?'End-of-day check-in':'Check-in: '+fd(selectedDate);
+  document.getElementById('modal').classList.add('open');
+  renderStep(false);
 }
-function onSlide(key,val){document.getElementById('sv-'+key).textContent=Math.round(val)+'%';document.getElementById('em-'+key).textContent=emoji(parseInt(val));}
+
+function renderStep(animate){
+  const total=tabs.length+1;
+  const card=document.getElementById('step-card');
+  const nextBtn=document.getElementById('step-next');
+  const backBtn=document.getElementById('step-back');
+
+  // dots
+  document.getElementById('step-dots').innerHTML=Array.from({length:total},(_,i)=>
+    `<div class="step-dot${i===stepIndex?' active':i<stepIndex?' done':''}"></div>`
+  ).join('');
+
+  backBtn.style.visibility=stepIndex===0?'hidden':'visible';
+  const isLast=stepIndex===total-1;
+  nextBtn.textContent=isLast?'Save day ✓':'Next →';
+  nextBtn.className='step-next-btn'+(isLast?' save':'');
+
+  function setContent(){
+    if(stepIndex<tabs.length){
+      const t=tabs[stepIndex];
+      const val=stepValues[t.key];
+      card.innerHTML=`
+        <div class="step-question">How did your <strong>${t.label}</strong> go?</div>
+        <div class="step-emoji" id="step-emoji">${emoji(val)}</div>
+        <div class="step-score-val" id="step-score" style="color:${sc(val)}">${val}%</div>
+        <div class="step-slider-wrap">
+          <input type="range" min="0" max="100" step="1" value="${val}" id="step-slider" oninput="onStepSlide(this.value)">
+        </div>`;
+    } else {
+      card.innerHTML=`
+        <div class="step-journal-label">How'd the day go overall?</div>
+        <textarea id="journal-text" placeholder="Reflect on your day…">${stepValues.journal}</textarea>`;
+      setTimeout(()=>{const ta=document.getElementById('journal-text');if(ta)ta.focus();},50);
+    }
+  }
+
+  if(animate){
+    card.classList.remove('in');
+    card.classList.add('out');
+    card.addEventListener('animationend',()=>{
+      card.classList.remove('out');
+      setContent();
+      card.classList.add('in');
+      card.addEventListener('animationend',()=>card.classList.remove('in'),{once:true});
+    },{once:true});
+  } else {
+    setContent();
+  }
+}
+
+function onStepSlide(val){
+  const v=parseInt(val);
+  if(stepIndex<tabs.length)stepValues[tabs[stepIndex].key]=v;
+  const em=document.getElementById('step-emoji');
+  const sc_el=document.getElementById('step-score');
+  if(em)em.textContent=emoji(v);
+  if(sc_el){sc_el.textContent=v+'%';sc_el.style.color=sc(v);}
+}
+
+function captureStep(){
+  if(stepIndex<tabs.length){
+    const sl=document.getElementById('step-slider');
+    if(sl)stepValues[tabs[stepIndex].key]=parseInt(sl.value);
+  } else {
+    const ta=document.getElementById('journal-text');
+    if(ta)stepValues.journal=ta.value;
+  }
+}
+
+function stepNext(){
+  captureStep();
+  if(stepIndex===tabs.length){saveEntry();return;}
+  stepIndex++;
+  renderStep(true);
+}
+
+function stepBack(){
+  if(stepIndex===0)return;
+  captureStep();
+  stepIndex--;
+  renderStep(true);
+}
+
 function closeModal(){document.getElementById('modal').classList.remove('open');}
+
 function saveEntry(){
-  const today=selectedDate||tk();const entry={date:today,journal:document.getElementById('journal-text').value};
-  tabs.forEach(t=>{const el=document.getElementById('sl-'+t.key);if(el)entry[t.key]=parseInt(el.value);});
+  const today=selectedDate||tk();
+  const entry={date:today,journal:stepValues.journal||''};
+  tabs.forEach(t=>{entry[t.key]=stepValues[t.key]!==undefined?stepValues[t.key]:50;});
   const vals=tabs.map(t=>entry[t.key]||0);
   entry.overall=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
   db[today]=entry;saveDB();closeModal();renderSection(activeTab);
