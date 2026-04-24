@@ -185,6 +185,18 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .step-journal-label{font-size:20px;font-weight:600;color:var(--text);margin-bottom:1rem;align-self:flex-start}
 .step-card textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;min-height:120px;resize:vertical;outline:none;line-height:1.5;text-align:left}
 .step-card textarea:focus{border-color:var(--purple)}
+.step-note{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 11px;min-height:64px;resize:none;outline:none;line-height:1.5;margin-top:.75rem}
+.step-note:focus{border-color:var(--purple)}
+/* EDIT FORM */
+.edit-form{text-align:left;width:100%;padding:0}
+.edit-form-topic{margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.edit-form-topic:last-of-type{border-bottom:none}
+.edit-topic-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.edit-topic-name{font-size:14px;font-weight:500;color:var(--text)}
+.edit-topic-score{font-size:13px;font-family:'DM Mono',monospace;font-weight:500}
+.edit-form-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:1.25rem 0 .5rem;font-family:'DM Mono',monospace}
+.edit-note{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 11px;min-height:60px;resize:none;outline:none;line-height:1.5;margin-top:.6rem}
+.edit-note:focus{border-color:var(--purple)}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:5px;outline:none;cursor:pointer;background:var(--bg4)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;border-radius:50%;background:#fff;cursor:pointer;border:3px solid var(--bg2);box-shadow:0 2px 8px rgba(0,0,0,.4)}
 input[type=range]::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;cursor:pointer;border:3px solid var(--bg2);box-shadow:0 2px 8px rgba(0,0,0,.4)}
@@ -630,18 +642,18 @@ function saveTabs(){
 
 // APP DATA
 const PRESETS=[
-  {key:'pornfree', label:'Quitting Porn', icon:'🚫', desc:'Stay free from pornography', question:'How was your temptation with porn today? Did you stay free?'},
-  {key:'exercise', label:'Exercise',    icon:'💪', desc:'Move your body today',        question:'Did you move your body today? How was your workout?'},
+  {key:'pornfree', label:'Quitting Porn', icon:'🚫', desc:'Stay free from pornography', question:'How was your temptation with porn today? Did you stay free?', notePlaceholder:'Did you relapse? What triggered you? Be honest…'},
+  {key:'exercise', label:'Exercise',    icon:'💪', desc:'Move your body today',        question:'Did you move your body today? How was your workout?', notePlaceholder:'What did you do?'},
   {key:'health',   label:'Health',      icon:'❤️', desc:'Overall physical wellbeing',  question:'How did your body feel today overall?'},
   {key:'nutrition',label:'Nutrition',   icon:'🥗', desc:'Eat well and nourish yourself',question:'How well did you fuel your body today?'},
-  {key:'prayer',   label:'Prayer',      icon:'🙏', desc:'Connect with God in prayer',  question:'Did you spend time with God in prayer today?'},
-  {key:'lust',     label:'Lust',        icon:'🛡️', desc:'Manage lustful thoughts',     question:'How did you manage lustful thoughts today? Did you guard your heart?'},
-  {key:'scripture',label:'Scripture',   icon:'📖', desc:'Study the scriptures',        question:'Did you open the Word today? What did you take in?'},
+  {key:'prayer',   label:'Prayer',      icon:'🙏', desc:'Connect with God in prayer',  question:'Did you spend time with God in prayer today?', notePlaceholder:'What did you pray about?'},
+  {key:'lust',     label:'Lust',        icon:'🛡️', desc:'Manage lustful thoughts',     question:'How did you manage lustful thoughts today? Did you guard your heart?', notePlaceholder:'What situations were hard? How did you respond?'},
+  {key:'scripture',label:'Scripture',   icon:'📖', desc:'Study the scriptures',        question:'Did you open the Word today? What did you take in?', notePlaceholder:'What did you read or study?'},
   {key:'sleep',    label:'Sleep',       icon:'😴', desc:'Rest and recovery',           question:'How did you sleep last night? Did you feel rested?'},
-  {key:'gratitude',label:'Gratitude',   icon:'✨', desc:'Practice thankfulness',       question:'Did you practice gratitude today? What stood out?'},
+  {key:'gratitude',label:'Gratitude',   icon:'✨', desc:'Practice thankfulness',       question:'Did you practice gratitude today? What stood out?', notePlaceholder:'What are you grateful for today?'},
   {key:'social',   label:'Social',      icon:'🤝', desc:'Connect with others',         question:'How were your connections with people today?'},
   {key:'mindset',  label:'Mindset',     icon:'🧠', desc:'Mental strength and attitude',question:'How was your headspace today? Did you stay grounded?'},
-  {key:'sobriety', label:'Sobriety',    icon:'💎', desc:'Stay sober and clear-headed', question:'Did you stay sober and clear-headed today?'},
+  {key:'sobriety', label:'Sobriety',    icon:'💎', desc:'Stay sober and clear-headed', question:'Did you stay sober and clear-headed today?', notePlaceholder:'Any struggles worth noting?'},
 ];
 
 let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all', username=null, pfpUrl=null;
@@ -978,13 +990,19 @@ let stepIndex=0, stepValues={};
 
 function openModal(dateKey){
   selectedDate=dateKey||tk();
-  stepIndex=0;
+  const isToday=selectedDate===tk();
+  const alreadyLogged=!!db[selectedDate];
+  const editMode2=!isToday||alreadyLogged;
   const ex=db[selectedDate]||{};
   stepValues={journal:ex.journal||'',overall:ex.overall!==undefined?ex.overall:50};
-  tabs.forEach(t=>{stepValues[t.key]=ex[t.key]!==undefined?ex[t.key]:50;});
-  document.getElementById('modal-title').textContent=selectedDate===tk()?'End-of-day check-in':'Check-in: '+fd(selectedDate);
+  tabs.forEach(t=>{
+    stepValues[t.key]=ex[t.key]!==undefined?ex[t.key]:50;
+    stepValues[t.key+'_note']=ex[t.key+'_note']||'';
+  });
+  document.getElementById('modal-title').textContent=editMode2?'Edit: '+fd(selectedDate):'End-of-day check-in';
   document.getElementById('modal').classList.add('open');
-  renderStep(false);
+  if(editMode2){renderEditForm();}
+  else{stepIndex=0;restoreStepNav();renderStep(false);}
 }
 
 function renderStep(animate){
@@ -1007,7 +1025,9 @@ function renderStep(animate){
     if(stepIndex<tabs.length){
       const t=tabs[stepIndex];
       const val=stepValues[t.key];
-      const q=(PRESETS.find(p=>p.key===t.key)||{}).question||'How did your <strong>'+t.label+'</strong> go?';
+      const preset=PRESETS.find(p=>p.key===t.key)||{};
+      const q=preset.question||'How did your <strong>'+t.label+'</strong> go?';
+      const noteVal=stepValues[t.key+'_note']||'';
       card.innerHTML=`
         <div class="step-topic-label">${t.icon||'⭐'} ${t.label}</div>
         <div class="step-question">${q}</div>
@@ -1015,7 +1035,8 @@ function renderStep(animate){
         <div class="step-score-val" id="step-score" style="color:${sc(val)}">${val}%</div>
         <div class="step-slider-wrap">
           <input type="range" min="0" max="100" step="1" value="${val}" id="step-slider" oninput="onStepSlide(this.value)">
-        </div>`;
+        </div>
+        ${preset.notePlaceholder?`<textarea class="step-note" id="step-note" placeholder="${preset.notePlaceholder}">${noteVal}</textarea>`:''}`;
       setTimeout(()=>updateSliderFill(document.getElementById('step-slider'),val),10);
     } else if(stepIndex===tabs.length){
       card.innerHTML=`
@@ -1071,6 +1092,8 @@ function captureStep(){
   if(stepIndex<tabs.length){
     const sl=document.getElementById('step-slider');
     if(sl)stepValues[tabs[stepIndex].key]=parseInt(sl.value);
+    const nt=document.getElementById('step-note');
+    if(nt)stepValues[tabs[stepIndex].key+'_note']=nt.value;
   } else if(stepIndex===tabs.length){
     const ta=document.getElementById('journal-text');
     if(ta)stepValues.journal=ta.value;
@@ -1094,13 +1117,85 @@ function stepBack(){
   renderStep(true);
 }
 
-function closeModal(){document.getElementById('modal').classList.remove('open');}
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+  restoreStepNav();
+  const card=document.getElementById('step-card');
+  card.style.cssText='';
+}
+
+function restoreStepNav(){
+  document.getElementById('step-dots').style.display='';
+  document.querySelector('.step-nav').innerHTML=
+    `<button id="step-back" class="step-back-btn" onclick="stepBack()">← Back</button>
+     <button id="step-next" class="step-next-btn" onclick="stepNext()">Next →</button>`;
+}
 
 function saveEntry(){
   const today=selectedDate||tk();
   const entry={date:today,journal:stepValues.journal||''};
-  tabs.forEach(t=>{entry[t.key]=stepValues[t.key]!==undefined?stepValues[t.key]:50;});
+  tabs.forEach(t=>{
+    entry[t.key]=stepValues[t.key]!==undefined?stepValues[t.key]:50;
+    if(stepValues[t.key+'_note'])entry[t.key+'_note']=stepValues[t.key+'_note'];
+  });
   entry.overall=stepValues.overall!==undefined?stepValues.overall:Math.round(tabs.map(t=>entry[t.key]||0).reduce((a,b)=>a+b,0)/tabs.length);
+  db[today]=entry;saveDB();closeModal();renderSection(activeTab);
+  if(selectedCalDay===today)renderDaySummary(today);
+}
+
+function renderEditForm(){
+  document.getElementById('step-dots').style.display='none';
+  document.querySelector('.step-nav').innerHTML=
+    `<button class="step-next-btn save" style="width:100%" onclick="saveEditForm()">Save changes</button>`;
+  const card=document.getElementById('step-card');
+  card.style.cssText='min-height:unset;text-align:left;align-items:stretch;padding:0;width:100%';
+  card.innerHTML=tabs.map(t=>{
+    const val=stepValues[t.key];
+    const preset=PRESETS.find(p=>p.key===t.key)||{};
+    const noteVal=stepValues[t.key+'_note']||'';
+    return `<div class="edit-form-topic">
+      <div class="edit-topic-row">
+        <span class="edit-topic-name">${t.icon||'⭐'} ${t.label}</span>
+        <span class="edit-topic-score" id="ets-${t.key}" style="color:${sc(val)}">${val}%</span>
+      </div>
+      <input type="range" id="esl-${t.key}" min="0" max="100" step="1" value="${val}" oninput="onEditSlide('${t.key}',this.value,this)">
+      ${preset.notePlaceholder?`<textarea class="edit-note" id="en-${t.key}" placeholder="${preset.notePlaceholder}">${noteVal}</textarea>`:''}
+    </div>`;
+  }).join('')+
+  `<div class="edit-form-label">Journal</div>
+   <textarea id="journal-text" class="edit-note" style="min-height:90px" placeholder="Reflect on your day…">${stepValues.journal}</textarea>
+   <div class="edit-form-label">Overall</div>
+   <div class="edit-topic-row">
+     <span class="edit-topic-name" style="font-size:13px;color:var(--text2)">How was your day as a whole?</span>
+     <span class="edit-topic-score" id="ets-overall" style="color:${sc(stepValues.overall)}">${stepValues.overall}%</span>
+   </div>
+   <input type="range" id="esl-overall" min="0" max="100" step="1" value="${stepValues.overall}" oninput="onEditSlide('overall',this.value,this)" style="margin-bottom:0">`;
+  setTimeout(()=>{
+    tabs.forEach(t=>updateSliderFill(document.getElementById('esl-'+t.key),stepValues[t.key]));
+    updateSliderFill(document.getElementById('esl-overall'),stepValues.overall);
+  },10);
+}
+
+function onEditSlide(key,val,el){
+  const v=parseInt(val);
+  if(key==='overall')stepValues.overall=v;
+  else stepValues[key]=v;
+  const scoreEl=document.getElementById('ets-'+key);
+  if(scoreEl){scoreEl.textContent=v+'%';scoreEl.style.color=sc(v);}
+  updateSliderFill(el,v);
+}
+
+function saveEditForm(){
+  const today=selectedDate||tk();
+  const entry={date:today};
+  tabs.forEach(t=>{
+    entry[t.key]=parseInt(document.getElementById('esl-'+t.key)?.value||stepValues[t.key]||50);
+    const noteEl=document.getElementById('en-'+t.key);
+    if(noteEl&&noteEl.value)entry[t.key+'_note']=noteEl.value;
+  });
+  const jEl=document.getElementById('journal-text');
+  entry.journal=jEl?jEl.value:'';
+  entry.overall=parseInt(document.getElementById('esl-overall')?.value||stepValues.overall||50);
   db[today]=entry;saveDB();closeModal();renderSection(activeTab);
   if(selectedCalDay===today)renderDaySummary(today);
 }
