@@ -272,7 +272,7 @@ function launchApp(){
 // TABS
 function renderTabBar(){
   document.getElementById('tab-bar').innerHTML=
-    `<button class="tab-btn${activeTab==='all'?' active':''}" onclick="switchTab('all',this)">All</button>`+
+    `<button class="tab-btn${activeTab==='all'?' active':''}" onclick="switchTab('all',this)">Summary</button>`+
     tabs.map(t=>`<button class="tab-btn${activeTab===t.key?' active':''}" onclick="switchTab('${t.key}',this)">${t.label}</button>`).join('');
 }
 function switchTab(key,el){
@@ -327,6 +327,7 @@ function renderAll(){
   const keys=Object.keys(db).sort().reverse();
   const avg=keys.length?Math.round(keys.reduce((a,k)=>a+(db[k].overall||0),0)/keys.length):0;
   const streak=calcStreak();
+  const longest=calcLongestStreak();
   const best=keys.length?Math.max(...keys.map(k=>db[k].overall||0)):0;
   el.innerHTML=`
     <div class="streak-banner">
@@ -336,6 +337,8 @@ function renderAll(){
     <div class="metric-grid">
       <div class="metric"><div class="metric-label">days logged</div><div class="metric-val">${keys.length}</div></div>
       <div class="metric"><div class="metric-label">best day</div><div class="metric-val" style="color:${sc(best)}">${best}%</div></div>
+      <div class="metric"><div class="metric-label">current streak</div><div class="metric-val">${streak} <span style="font-size:14px;font-weight:400;color:var(--text2)">days</span></div></div>
+      <div class="metric"><div class="metric-label">longest streak</div><div class="metric-val">${longest} <span style="font-size:14px;font-weight:400;color:var(--text2)">days</span></div></div>
     </div>
     <div class="card">
       <div class="cal-nav">
@@ -471,6 +474,7 @@ function sc(s){if(s>=80)return '#86EFAC';if(s>=60)return '#16A34A';if(s>=40)retu
 function emoji(v){if(v>=85)return '😄';if(v>=65)return '🙂';if(v>=45)return '😐';if(v>=25)return '😕';return '😞';}
 function fd(k){const[y,m,d]=k.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return `${mn[parseInt(m)-1]} ${parseInt(d)}, ${y}`;}
 function calcStreak(){const t=new Date();let s=0;for(let i=0;i<365;i++){const d=new Date(t);d.setDate(d.getDate()-i);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(db[k])s++;else if(i>0)break;}return s;}
+function calcLongestStreak(){const keys=Object.keys(db).sort();let longest=0,cur=0;keys.forEach((k,i)=>{if(i===0){cur=1;}else{const diff=(new Date(k)-new Date(keys[i-1]))/(864e5);cur=diff===1?cur+1:1;}longest=Math.max(longest,cur);});return longest;}
 
 // INIT
 load();initOnboard();
