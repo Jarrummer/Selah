@@ -137,7 +137,9 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .today-banner:active{border-color:var(--purple)}
 .today-banner-label{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace}
 .today-banner-hint{font-size:11px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace}
-.today-banner-score{font-size:42px;font-weight:700;letter-spacing:-1.5px;line-height:1}
+.today-banner-note{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-banner-score{font-size:42px;font-weight:700;letter-spacing:-1.5px;line-height:1;margin-left:1rem}
+.topic-note{font-size:13px;color:var(--text2);margin-top:5px;line-height:1.5;font-style:italic}
 
 /* VIEW ALL BTN */
 .view-all-btn{background:none;border:none;color:var(--purple);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;padding:2px 0;font-weight:500}
@@ -1077,11 +1079,12 @@ function renderTopic(key){
   const trend=vals.length>=2?(vals[0]-vals[1]):null;
   el.innerHTML=`
     <div class="today-banner" onclick="openModal('${today}')">
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="today-banner-label">Today</div>
         <div class="today-banner-hint">${logged?'tap to edit':'tap to log'}</div>
+        ${logged&&todayEntry[key+'_note']?`<div class="today-banner-note">${todayEntry[key+'_note']}</div>`:''}
       </div>
-      <div class="today-banner-score" style="color:${logged?sc(todayVal):'var(--text3)'}">${logged?todayVal+'%':'—'}</div>
+      <div class="today-banner-score" style="color:${logged?sc(todayVal):'var(--text3)'};flex-shrink:0">${logged?todayVal+'%':'—'}</div>
     </div>
     <div class="metric-grid">
       <div class="metric"><div class="metric-label">avg score</div><div class="metric-val" style="color:${sc(avg)}">${avg}%</div></div>
@@ -1091,7 +1094,7 @@ function renderTopic(key){
     </div>
     <div class="card">
       <div class="card-title">Recent days</div>
-      ${keys.slice(0,7).map(k=>{const v=db[k][key];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div></div>`;}).join('')||'<div class="empty-state">No data yet.</div>'}
+      ${keys.slice(0,7).map(k=>{const v=db[k][key];const note=db[k][key+'_note'];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div>${note?`<div class="topic-note">${note}</div>`:''}</div>`;}).join('')||'<div class="empty-state">No data yet.</div>'}
     </div>
     <div class="card">
       <div class="card-title">Journal notes</div>
