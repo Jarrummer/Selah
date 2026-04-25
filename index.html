@@ -250,11 +250,11 @@ canvas{display:block}
 .edit-form{text-align:left;width:100%;padding:0}
 .edit-form-topic{margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border);border-radius:var(--radius-sm);transition:background .3s}
 .edit-form-topic:last-of-type{border-bottom:none}
-.edit-form-topic.highlight{animation:topicGlow 2s ease forwards}
+.edit-form-topic.highlight{animation:topicGlow 1.4s ease forwards}
 @keyframes topicGlow{
-  0%{box-shadow:0 0 0 2px var(--purple);background:rgba(127,119,221,.1)}
-  65%{box-shadow:0 0 0 2px var(--purple);background:rgba(127,119,221,.1)}
-  100%{box-shadow:0 0 0 0 transparent;background:transparent}
+  0%  {box-shadow:0 0 0 1.5px var(--purple),0 0 10px rgba(127,119,221,.55);background:rgba(0,0,0,.18)}
+  65% {box-shadow:0 0 0 1.5px var(--purple),0 0 10px rgba(127,119,221,.55);background:rgba(0,0,0,.18)}
+  100%{box-shadow:none;background:transparent}
 }
 .edit-topic-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .edit-topic-name{font-size:14px;font-weight:500;color:var(--text)}
@@ -919,7 +919,7 @@ function showSplashFull(){
     },interval);
   },200);
   // Phase 2: crossfade to prompt after streak display
-  const phase2Delay=target>0?Math.max(1600,target*60+600):1400;
+  const phase2Delay=target>0?Math.max(2000,target*60+600):1800;
   setTimeout(()=>{
     streakEl.classList.remove('visible');
     setTimeout(()=>promptEl.classList.add('visible'),300);
@@ -947,7 +947,7 @@ function splashBgTap(e){
 
 function armInactivityTimer(){
   clearTimeout(splashDismissTimer);
-  splashDismissTimer=setTimeout(splashDismiss,5000);
+  splashDismissTimer=setTimeout(splashDismiss,7000);
 }
 
 function splashDismiss(){
@@ -1286,9 +1286,11 @@ function openModal(dateKey, startKey){
         const el=document.getElementById('etopic-'+startKey);
         if(el){
           el.scrollIntoView({behavior:'smooth',block:'center'});
-          el.classList.remove('highlight');
-          void el.offsetWidth; // force reflow so animation restarts cleanly
-          el.classList.add('highlight');
+          setTimeout(()=>{
+            el.classList.remove('highlight');
+            void el.offsetWidth;
+            el.classList.add('highlight');
+          },420);
         }
       },80);
     }
@@ -1707,7 +1709,7 @@ function calcStreak(){const t=new Date();let s=0;for(let i=0;i<365;i++){const d=
 function calcLongestStreak(){const keys=Object.keys(db).sort();let longest=0,cur=0;keys.forEach((k,i)=>{if(i===0){cur=1;}else{const diff=(new Date(k)-new Date(keys[i-1]))/(864e5);cur=diff===1?cur+1:1;}longest=Math.max(longest,cur);});return longest;}
 
 // BUILD + DEV TOOLS
-const BUILD='b5';
+const BUILD='b6';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
