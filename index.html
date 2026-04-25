@@ -184,10 +184,12 @@ canvas{display:block}
 .goal-editor-row label{display:block;font-size:14px;font-weight:500;margin-bottom:8px}
 
 /* SAVE TOAST */
-#save-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#242428;border:1px solid rgba(127,119,221,.5);border-radius:12px;padding:14px 20px;z-index:10000;pointer-events:none;display:none;min-width:160px;box-shadow:0 8px 32px rgba(0,0,0,.7)}
-.save-toast-label{font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;color:#fff;margin-bottom:8px}
-.save-toast-track{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
-#save-toast-fill{height:100%;width:0;background:#7F77DD;border-radius:2px}
+#_toast{position:fixed;top:50%;left:50%;opacity:0;transform:translate(-50%,-50%) scale(.9);background:#242428;border:1.5px solid #7F77DD;border-radius:14px;padding:18px 26px;z-index:999999;pointer-events:none;min-width:170px;box-shadow:0 8px 40px rgba(0,0,0,.85);animation:_toastAnim 3s ease forwards}
+#_toast ._tlabel{font-size:14px;font-weight:600;color:#fff;margin-bottom:10px;font-family:'DM Sans',sans-serif}
+#_toast ._ttrack{height:4px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden}
+#_toast ._tfill{height:100%;background:#7F77DD;border-radius:4px;animation:_fillAnim 2.8s ease forwards}
+@keyframes _toastAnim{0%{opacity:0;transform:translate(-50%,-50%) scale(.9)}6%{opacity:1;transform:translate(-50%,-50%) scale(1)}82%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.97)}}
+@keyframes _fillAnim{0%{width:0}6%{width:0}85%{width:90%}100%{width:100%}}
 
 /* BUILD BADGE */
 .build-badge{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);font-weight:400;letter-spacing:.04em;vertical-align:middle;margin-left:5px}
@@ -1449,8 +1451,7 @@ function saveEntry(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     renderSection(activeTab);
     if(selectedCalDay===today)renderDaySummary(today);
-    completeSaveProgress();
-    setTimeout(closeModal,350);
+    closeModal();
   }));
 }
 
@@ -1512,8 +1513,7 @@ function saveEditForm(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     renderSection(activeTab);
     if(selectedCalDay===today)renderDaySummary(today);
-    completeSaveProgress();
-    setTimeout(closeModal,350);
+    closeModal();
   }));
 }
 
@@ -1733,37 +1733,14 @@ function startSaveProgress(){
   const old=document.getElementById('_toast');if(old)old.remove();
   const toast=document.createElement('div');
   toast.id='_toast';
-  toast.innerHTML='<div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:10px;font-family:sans-serif">Saving...</div>'
-    +'<div style="height:4px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden">'
-    +'<div id="_tfill" style="height:100%;width:0;background:#7F77DD;border-radius:4px"></div></div>';
-  Object.assign(toast.style,{
-    position:'fixed',top:'50%',left:'50%',
-    transform:'translate(-50%,-50%)',
-    background:'#242428',
-    border:'1.5px solid #7F77DD',
-    borderRadius:'14px',
-    padding:'18px 26px',
-    zIndex:'999999',
-    minWidth:'170px',
-    boxShadow:'0 8px 40px rgba(0,0,0,.85)',
-    pointerEvents:'none'
-  });
+  toast.innerHTML='<div class="_tlabel">Saving...</div><div class="_ttrack"><div class="_tfill"></div></div>';
   document.body.appendChild(toast);
-  // Start fill animation — runs slow so it stays alive during long renders
-  setTimeout(()=>{
-    const f=document.getElementById('_tfill');
-    if(f){f.style.transition='width 3s ease';f.style.width='80%';}
-  },40);
+  toast.addEventListener('animationend',()=>{if(toast.parentNode)toast.remove();},{once:true});
 }
-function completeSaveProgress(){
-  const toast=document.getElementById('_toast');if(!toast)return;
-  const f=document.getElementById('_tfill');
-  if(f){f.style.transition='width .2s ease';f.style.width='100%';}
-  setTimeout(()=>{if(toast.parentNode)toast.remove();},400);
-}
+function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b17';
+const BUILD='b18';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
