@@ -332,10 +332,6 @@ textarea:focus{border-color:var(--purple)}
 </div>
 
 <!-- AUTH -->
-<div id="save-toast">
-  <div class="save-toast-label">Saving...</div>
-  <div class="save-toast-track"><div class="save-toast-fill" id="save-toast-fill"></div></div>
-</div>
 
 <div id="screen-auth" class="screen active" style="padding:3rem 1.25rem 6rem">
   <div class="logo">Se<span>l</span>ah</div>
@@ -592,6 +588,7 @@ textarea:focus{border-color:var(--purple)}
     <div class="panel-section">
       <div class="dev-label" id="dev-build-label"></div>
       <div class="dev-label" style="margin-top:-.75rem;margin-bottom:1.5rem" id="dev-user-label"></div>
+      <button class="dev-btn" onclick="startSaveProgress()">Test saving toast</button>
       <button class="dev-btn" onclick="devRunSplash()">Play splash animation</button>
       <button class="dev-btn" onclick="devGenerateData()">Generate 60 days of data</button>
       <button class="dev-btn" onclick="devGenerateNotes()">Add notes to existing data</button>
@@ -1733,25 +1730,39 @@ function calcLongestStreak(){const keys=Object.keys(db).sort();let longest=0,cur
 
 // SAVE TOAST
 function startSaveProgress(){
-  const toast=document.getElementById('save-toast');
-  const fill=document.getElementById('save-toast-fill');
-  fill.style.transition='none';
-  fill.style.width='0';
-  toast.style.display='block';
+  const old=document.getElementById('_toast');if(old)old.remove();
+  const toast=document.createElement('div');
+  toast.id='_toast';
+  toast.innerHTML='<div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:10px;font-family:sans-serif">Saving...</div>'
+    +'<div style="height:4px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden">'
+    +'<div id="_tfill" style="height:100%;width:0;background:#7F77DD;border-radius:4px"></div></div>';
+  Object.assign(toast.style,{
+    position:'fixed',top:'50%',left:'50%',
+    transform:'translate(-50%,-50%)',
+    background:'#242428',
+    border:'1.5px solid #7F77DD',
+    borderRadius:'14px',
+    padding:'18px 26px',
+    zIndex:'999999',
+    minWidth:'170px',
+    boxShadow:'0 8px 40px rgba(0,0,0,.85)',
+    pointerEvents:'none'
+  });
+  document.body.appendChild(toast);
   setTimeout(()=>{
-    fill.style.transition='width .8s cubic-bezier(.4,0,.2,1)';
-    fill.style.width='80%';
-  },30);
+    const f=document.getElementById('_tfill');
+    if(f){f.style.transition='width .85s ease';f.style.width='82%';}
+  },40);
   setTimeout(()=>{
-    fill.style.transition='width .15s ease';
-    fill.style.width='100%';
-    setTimeout(()=>{toast.style.display='none';fill.style.width='0';},200);
-  },1400);
+    const f=document.getElementById('_tfill');
+    if(f){f.style.transition='width .15s ease';f.style.width='100%';}
+    setTimeout(()=>{if(toast.parentNode)toast.remove();},220);
+  },1500);
 }
 function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b11';
+const BUILD='b12';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
