@@ -1445,15 +1445,13 @@ function saveEntry(){
   });
   entry.overall=stepValues.overall!==undefined?stepValues.overall:Math.round(tabs.map(t=>entry[t.key]||0).reduce((a,b)=>a+b,0)/tabs.length);
   db[today]=entry;saveDB();
-  const btn=document.getElementById('step-next');
-  if(btn){btn.textContent='Saved ✓';btn.style.background='#16A34A';}
-  setTimeout(()=>{
-    closeModal();
-    requestAnimationFrame(()=>{
-      renderSection(activeTab);
-      if(selectedCalDay===today)renderDaySummary(today);
-    });
-  },400);
+  startSaveProgress();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    renderSection(activeTab);
+    if(selectedCalDay===today)renderDaySummary(today);
+    completeSaveProgress();
+    setTimeout(closeModal,350);
+  }));
 }
 
 function renderEditForm(){
@@ -1510,15 +1508,13 @@ function saveEditForm(){
   entry.journal=jEl?jEl.value:'';
   entry.overall=parseInt(document.getElementById('esl-overall')?.value||stepValues.overall||50);
   db[today]=entry;saveDB();
-  const sbtn=document.querySelector('.step-next-btn.save');
-  if(sbtn){sbtn.textContent='Saved ✓';sbtn.style.background='#16A34A';}
-  setTimeout(()=>{
-    closeModal();
-    requestAnimationFrame(()=>{
-      renderSection(activeTab);
-      if(selectedCalDay===today)renderDaySummary(today);
-    });
-  },400);
+  startSaveProgress();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    renderSection(activeTab);
+    if(selectedCalDay===today)renderDaySummary(today);
+    completeSaveProgress();
+    setTimeout(closeModal,350);
+  }));
 }
 
 function calDayTap(k){
@@ -1767,7 +1763,7 @@ function completeSaveProgress(){
 }
 
 // BUILD + DEV TOOLS
-const BUILD='b16';
+const BUILD='b17';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
