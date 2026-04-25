@@ -1445,8 +1445,8 @@ function saveEntry(){
   });
   entry.overall=stepValues.overall!==undefined?stepValues.overall:Math.round(tabs.map(t=>entry[t.key]||0).reduce((a,b)=>a+b,0)/tabs.length);
   db[today]=entry;saveDB();
-  startSaveProgress();
   closeModal();
+  startSaveProgress();
   requestAnimationFrame(()=>{
     renderSection(activeTab);
     if(selectedCalDay===today)renderDaySummary(today);
@@ -1508,8 +1508,8 @@ function saveEditForm(){
   entry.journal=jEl?jEl.value:'';
   entry.overall=parseInt(document.getElementById('esl-overall')?.value||stepValues.overall||50);
   db[today]=entry;saveDB();
-  startSaveProgress();
   closeModal();
+  startSaveProgress();
   requestAnimationFrame(()=>{
     renderSection(activeTab);
     if(selectedCalDay===today)renderDaySummary(today);
@@ -1762,7 +1762,7 @@ function startSaveProgress(){
 function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b12';
+const BUILD='b13';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
