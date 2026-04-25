@@ -1208,7 +1208,7 @@ function renderTopic(key){
   const trend=vals.length>=2?(vals[0]-vals[1]):null;
   el.innerHTML=`
     ${preset.question?`<div class="topic-question-banner">${preset.question}</div>`:''}
-    <div class="today-banner" onclick="openModal('${today}')">
+    <div class="today-banner" onclick="openModal('${today}','${key}')">
       <div style="flex:1;min-width:0">
         <div class="today-banner-label">Today</div>
         <div class="today-banner-hint">${logged?'tap to edit':'tap to log'}</div>
@@ -1260,7 +1260,7 @@ function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal(
 // CHECK-IN
 let stepIndex=0, stepValues={};
 
-function openModal(dateKey){
+function openModal(dateKey, startKey){
   selectedDate=dateKey||tk();
   const isToday=selectedDate===tk();
   const alreadyLogged=!!db[selectedDate];
@@ -1273,8 +1273,20 @@ function openModal(dateKey){
   });
   document.getElementById('modal-title').textContent=editMode2?'Edit: '+fd(selectedDate):'End-of-day check-in';
   document.getElementById('modal').classList.add('open');
-  if(editMode2){renderEditForm();}
-  else{stepIndex=0;restoreStepNav();renderStep(false);}
+  if(editMode2){
+    renderEditForm();
+    if(startKey){
+      setTimeout(()=>{
+        const el=document.getElementById('esl-'+startKey);
+        if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+      },80);
+    }
+  } else {
+    const idx=startKey?tabs.findIndex(t=>t.key===startKey):-1;
+    stepIndex=idx>=0?idx:0;
+    restoreStepNav();
+    renderStep(false);
+  }
 }
 
 function renderStep(animate){
