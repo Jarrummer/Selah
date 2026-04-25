@@ -427,6 +427,16 @@ textarea:focus{border-color:var(--purple)}
   <div id="jpage-list" class="jpage-list"></div>
 </div>
 
+<!-- ANSWERS PAGE -->
+<div id="answers-page" class="jpage">
+  <div class="jpage-header">
+    <button class="jpage-back" onclick="closeAnswersPage()">← Back</button>
+    <div class="jpage-title" id="answers-page-title"></div>
+  </div>
+  <div id="answers-page-question" style="font-size:14px;font-style:italic;color:var(--text2);line-height:1.6;padding:1rem 1.25rem .25rem"></div>
+  <div id="answers-page-list" class="jpage-list"></div>
+</div>
+
 <!-- GOALS EDITOR -->
 <div class="modal-overlay" id="goals-editor">
   <div class="modal">
@@ -1131,8 +1141,11 @@ function renderTopic(key){
       ${keys.slice(0,7).map(k=>{const v=db[k][key];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div></div>`;}).join('')||'<div class="empty-state">No data yet.</div>'}
     </div>
     ${(()=>{const noteKeys=keys.filter(k=>db[k][key+'_note']);return noteKeys.length?`<div class="card">
-      <div class="card-title">${preset.question||'Notes'}</div>
-      ${noteKeys.slice(0,10).map(k=>`<div class="topic-answer-entry">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${preset.question||'Notes'}</span>
+        <button class="view-all-btn" onclick="openAnswersPage('${key}')">View all →</button>
+      </div>
+      ${noteKeys.slice(0,3).map(k=>`<div class="topic-answer-entry">
         <div class="topic-answer-date">${fd(k)} <span style="color:${sc(db[k][key])}">${db[k][key]}%</span></div>
         <div class="topic-answer-text">${db[k][key+'_note']}</div>
       </div>`).join('')}
@@ -1427,6 +1440,31 @@ function renderJournalPage(){
       <div class="jpage-entry-preview">${truncate(e.journal,140)}</div>
     </div>`;
   }).join('')+'<div class="jpage-hint">double-tap any entry to read in full</div>';
+}
+
+function openAnswersPage(key){
+  renderAnswersPage(key);
+  document.getElementById('answers-page').classList.add('open');
+}
+function closeAnswersPage(){
+  document.getElementById('answers-page').classList.remove('open');
+}
+function renderAnswersPage(key){
+  const preset=PRESETS.find(p=>p.key===key)||{};
+  const t=tabs.find(x=>x.key===key)||{};
+  const label=t.label||preset.label||key;
+  document.getElementById('answers-page-title').textContent=label+' Answers';
+  document.getElementById('answers-page-question').textContent=preset.question||'';
+  const keys=Object.keys(db).filter(k=>db[k][key+'_note']).sort().reverse();
+  const el=document.getElementById('answers-page-list');
+  if(!keys.length){el.innerHTML='<div class="empty-state" style="padding:2rem 0">No answers recorded yet.</div>';return;}
+  el.innerHTML=keys.map(k=>`<div class="jpage-entry">
+    <div class="jpage-entry-header">
+      <span class="jpage-entry-date">${fd(k)}</span>
+      <span style="font-size:13px;color:${sc(db[k][key])};font-family:'DM Mono',monospace">${db[k][key]}%</span>
+    </div>
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-top:.4rem">${db[k][key+'_note']}</div>
+  </div>`).join('')+'<div class="jpage-hint">'+keys.length+' entr'+(keys.length===1?'y':'ies')+'</div>';
 }
 
 // CHARTS
