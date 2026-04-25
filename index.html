@@ -360,19 +360,9 @@ textarea:focus{border-color:var(--purple)}
       <div class="app-date" id="header-date"></div>
     </div>
     <div class="header-btns">
-      <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9776;</div>
-      <div class="header-avatar" id="header-avatar" onclick="openSidePanel()">?</div>
+      <div class="pen-btn" id="pen-btn" onclick="openSidePanel()">&#9776;</div>
+      <div class="header-avatar" id="header-avatar" onclick="openSidePanel('account')">?</div>
     </div>
-  </div>
-  <div class="edit-panel" id="edit-panel">
-    <div class="edit-panel-title" style="margin-bottom:.5rem">Add topics</div>
-    <div id="edit-preset-grid" class="preset-grid" style="margin-bottom:1rem"></div>
-    <div class="edit-add-row" style="margin-bottom:1rem">
-      <input class="custom-input" id="edit-add-input" placeholder="Create your own..." maxlength="24" style="font-size:13px;padding:8px 10px">
-      <button class="add-btn" onclick="editAddTab()" style="font-size:13px;padding:8px 12px">Add</button>
-    </div>
-    <div class="edit-panel-title">&#9776; drag to reorder &nbsp;&nbsp; &times; to remove</div>
-    <ul class="drag-list" id="drag-list"></ul>
   </div>
   <div class="tab-bar" id="tab-bar"></div>
   <div id="sections-wrap"></div>
@@ -440,9 +430,9 @@ textarea:focus{border-color:var(--purple)}
 <!-- JOURNAL PAGE -->
 <div id="journal-page" class="jpage">
   <div class="jpage-header">
-    <button class="pen-btn" onclick="openWriteJournal()" title="New entry">&#9998;</button>
+    <button class="jpage-back" onclick="closeJournalPage()">← Overview</button>
     <div class="jpage-title">Journal</div>
-    <button class="jpage-back" onclick="closeJournalPage()">Overview →</button>
+    <button class="pen-btn" onclick="openWriteJournal()" title="New entry">&#9998;</button>
   </div>
   <div id="jpage-list" class="jpage-list"></div>
 </div>
@@ -488,6 +478,13 @@ textarea:focus{border-color:var(--purple)}
       <input type="file" id="pfp-input" accept="image/*" style="display:none" onchange="handlePfpUpload(this.files[0]);this.value=''">
       <div class="panel-profile-name" id="panel-profile-name"></div>
       <div class="panel-profile-email" id="panel-profile-email"></div>
+    </div>
+    <div class="panel-nav-item" onclick="openTopicsPanel()">
+      <div class="panel-nav-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </div>
+      <div class="panel-nav-label">Edit Topics</div>
+      <div class="panel-nav-chevron">›</div>
     </div>
     <div class="panel-nav-item" onclick="showPanelView('account')">
       <div class="panel-nav-icon">
@@ -549,6 +546,24 @@ textarea:focus{border-color:var(--purple)}
       <div class="panel-title">Settings</div>
     </div>
     <div class="panel-section" style="color:var(--text3);font-size:13px;padding-top:2rem;text-align:center">Coming soon...</div>
+  </div>
+
+  <!-- TOPICS -->
+  <div id="panel-topics" class="panel-view">
+    <div class="panel-header">
+      <button class="panel-back" onclick="closeTopicsPanel()">‹ Back</button>
+      <div class="panel-title">Edit Topics</div>
+    </div>
+    <div class="panel-section" style="padding-bottom:2rem">
+      <div class="edit-panel-title" style="margin-bottom:.5rem">Add topics</div>
+      <div id="edit-preset-grid" class="preset-grid" style="margin-bottom:1rem"></div>
+      <div class="edit-add-row" style="margin-bottom:1rem">
+        <input class="custom-input" id="edit-add-input" placeholder="Create your own..." maxlength="24" style="font-size:13px;padding:8px 10px">
+        <button class="add-btn" onclick="editAddTab()" style="font-size:13px;padding:8px 12px">Add</button>
+      </div>
+      <div class="edit-panel-title" style="margin-bottom:.5rem">&#9776; drag to reorder &nbsp;&nbsp; &times; to remove</div>
+      <ul class="drag-list" id="drag-list"></ul>
+    </div>
   </div>
 
   <!-- DEVELOPER -->
@@ -628,14 +643,26 @@ async function authSubmit(){
   }
 }
 function signOut(){fauth.signOut();}
-function openSidePanel(){
-  showPanelView('home');
+function openSidePanel(view='home'){
+  showPanelView(view);
   document.getElementById('side-overlay').classList.add('open');
   document.getElementById('side-panel').classList.add('open');
 }
 function closeSidePanel(){
+  if(editMode){editMode=false;saveTabs();renderTabBar();}
   document.getElementById('side-overlay').classList.remove('open');
   document.getElementById('side-panel').classList.remove('open');
+}
+function openTopicsPanel(){
+  editMode=true;
+  showPanelView('topics');
+  renderDragList();
+}
+function closeTopicsPanel(){
+  editMode=false;
+  saveTabs();
+  renderTabBar();
+  showPanelView('home');
 }
 function showPanelView(view){
   document.querySelectorAll('.panel-view').forEach(v=>v.classList.remove('active'));
@@ -950,14 +977,7 @@ function switchTab(key,el){
   renderSection(key);
 }
 
-// EDIT MODE
-function toggleEditMode(){
-  editMode=!editMode;
-  const panel=document.getElementById('edit-panel');
-  const btn=document.getElementById('pen-btn');
-  if(editMode){panel.classList.add('open');btn.classList.add('active-edit');renderDragList();}
-  else{panel.classList.remove('open');btn.classList.remove('active-edit');saveTabs();renderTabBar();}
-}
+// EDIT MODE — now lives in the side panel via openTopicsPanel()
 function renderDragList(){
   const activeKeys=new Set(tabs.map(t=>t.key));
   document.getElementById('edit-preset-grid').innerHTML=PRESETS.map(p=>{
