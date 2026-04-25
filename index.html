@@ -184,8 +184,8 @@ canvas{display:block}
 .goal-editor-row label{display:block;font-size:14px;font-weight:500;margin-bottom:8px}
 
 /* SAVE TOAST */
-#save-toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 16px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .18s,transform .18s;min-width:150px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-#save-toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+#save-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:14px 20px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;min-width:160px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+#save-toast.visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .save-toast-label{font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text2);margin-bottom:7px}
 .save-toast-track{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
 .save-toast-fill{height:100%;width:0;background:var(--purple);border-radius:2px}
@@ -1742,19 +1742,19 @@ function startSaveProgress(){
   fill.style.width='0';
   toast.classList.add('visible');
   requestAnimationFrame(()=>fill.classList.add('running'));
-}
-function completeSaveProgress(){
-  const fill=document.getElementById('save-toast-fill');
-  fill.classList.remove('running');
-  fill.classList.add('done');
   setTimeout(()=>{
-    document.getElementById('save-toast').classList.remove('visible');
-    setTimeout(()=>fill.classList.remove('done'),300);
-  },300);
+    fill.classList.remove('running');
+    fill.classList.add('done');
+    setTimeout(()=>{
+      toast.classList.remove('visible');
+      setTimeout(()=>fill.classList.remove('done'),200);
+    },250);
+  },750);
 }
+function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b9';
+const BUILD='b10';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
