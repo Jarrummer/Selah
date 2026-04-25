@@ -143,6 +143,10 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .today-banner-note{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .today-banner-score{font-size:42px;font-weight:700;letter-spacing:-1.5px;line-height:1;margin-left:1rem}
 .topic-note{font-size:13px;color:var(--text2);margin-top:5px;line-height:1.5;font-style:italic}
+.topic-answer-entry{border-left:2px solid var(--border2);padding:8px 12px;margin-bottom:10px;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.topic-answer-entry:last-child{margin-bottom:0}
+.topic-answer-date{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px}
+.topic-answer-text{font-size:14px;color:var(--text);line-height:1.6}
 
 /* VIEW ALL BTN */
 .view-all-btn{background:none;border:none;color:var(--purple);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;padding:2px 0;font-weight:500}
@@ -1124,8 +1128,15 @@ function renderTopic(key){
     </div>
     <div class="card">
       <div class="card-title">Recent days</div>
-      ${keys.slice(0,7).map(k=>{const v=db[k][key];const note=db[k][key+'_note'];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div>${note?`<div class="topic-note">${note}</div>`:''}</div>`;}).join('')||'<div class="empty-state">No data yet.</div>'}
+      ${keys.slice(0,7).map(k=>{const v=db[k][key];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div></div>`;}).join('')||'<div class="empty-state">No data yet.</div>'}
     </div>
+    ${(()=>{const noteKeys=keys.filter(k=>db[k][key+'_note']);return noteKeys.length?`<div class="card">
+      <div class="card-title">${preset.question||'Notes'}</div>
+      ${noteKeys.slice(0,10).map(k=>`<div class="topic-answer-entry">
+        <div class="topic-answer-date">${fd(k)} <span style="color:${sc(db[k][key])}">${db[k][key]}%</span></div>
+        <div class="topic-answer-text">${db[k][key+'_note']}</div>
+      </div>`).join('')}
+    </div>`:'';})()}
     <div class="card">
       <div class="card-title">Journal notes</div>
       ${keys.slice(0,12).filter(k=>db[k].journal).map(k=>`<div class="history-entry"><div class="history-date">${fd(k)}</div><div class="history-note">${db[k].journal}</div></div>`).join('')||'<div class="empty-state">No journal entries yet.</div>'}
