@@ -1050,7 +1050,7 @@ function renderJournalPreviews(){
   const jel=document.getElementById('all-journal');if(!jel)return;
   const keys=Object.keys(db).filter(k=>db[k].journal).sort().reverse();
   if(!keys.length){jel.innerHTML='<div class="empty-state">No journal entries yet.</div>';return;}
-  jel.innerHTML=keys.slice(0,20).map(k=>{
+  jel.innerHTML=keys.slice(0,3).map(k=>{
     const e=db[k];
     const sel=selectedJournalKey===k;
     return `<div class="journal-preview${sel?' selected':''}" onclick="journalTap('${k}')">
