@@ -132,6 +132,13 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .journal-preview-text{font-size:13px;color:var(--text2);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
 .journal-hint{font-size:11px;color:var(--text3);text-align:center;padding:.5rem 0;font-family:'DM Mono',monospace}
 
+/* TODAY BANNER */
+.today-banner{display:flex;justify-content:space-between;align-items:center;background:rgba(20,20,22,0.78);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem 1.25rem;margin:1.25rem 1.25rem .25rem;cursor:pointer;transition:border-color .15s;backdrop-filter:blur(4px)}
+.today-banner:active{border-color:var(--purple)}
+.today-banner-label{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace}
+.today-banner-hint{font-size:11px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace}
+.today-banner-score{font-size:42px;font-weight:700;letter-spacing:-1.5px;line-height:1}
+
 /* VIEW ALL BTN */
 .view-all-btn{background:none;border:none;color:var(--purple);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;padding:2px 0;font-weight:500}
 
@@ -875,6 +882,7 @@ function switchTab(key,el){
   activeTab=key;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
+  document.getElementById('log-btn').style.display=key==='all'?'block':'none';
   renderSection(key);
 }
 
@@ -1058,12 +1066,23 @@ function closeJournalModal(){
 function renderTopic(key){
   const t=tabs.find(x=>x.key===key);if(!t)return;
   const el=document.getElementById('sec-main');
+  const today=tk();
+  const todayEntry=db[today];
+  const todayVal=todayEntry?.[key];
+  const logged=todayVal!==undefined;
   const keys=Object.keys(db).filter(k=>db[k][key]!==undefined).sort().reverse();
   const vals=keys.map(k=>db[k][key]);
   const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
   const best=vals.length?Math.max(...vals):0;
   const trend=vals.length>=2?(vals[0]-vals[1]):null;
   el.innerHTML=`
+    <div class="today-banner" onclick="openModal('${today}')">
+      <div>
+        <div class="today-banner-label">Today</div>
+        <div class="today-banner-hint">${logged?'tap to edit':'tap to log'}</div>
+      </div>
+      <div class="today-banner-score" style="color:${logged?sc(todayVal):'var(--text3)'}">${logged?todayVal+'%':'—'}</div>
+    </div>
     <div class="metric-grid">
       <div class="metric"><div class="metric-label">avg score</div><div class="metric-val" style="color:${sc(avg)}">${avg}%</div></div>
       <div class="metric"><div class="metric-label">days logged</div><div class="metric-val">${keys.length}</div></div>
