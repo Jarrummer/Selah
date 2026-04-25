@@ -132,6 +132,9 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .journal-preview-text{font-size:13px;color:var(--text2);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
 .journal-hint{font-size:11px;color:var(--text3);text-align:center;padding:.5rem 0;font-family:'DM Mono',monospace}
 
+/* TOPIC QUESTION */
+.topic-question-banner{font-size:15px;font-weight:500;color:var(--text2);line-height:1.5;padding:1.25rem 1.25rem .25rem;font-style:italic}
+
 /* TODAY BANNER */
 .today-banner{display:flex;justify-content:space-between;align-items:center;background:rgba(20,20,22,0.78);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem 1.25rem;margin:1.25rem 1.25rem .25rem;cursor:pointer;transition:border-color .15s;backdrop-filter:blur(4px)}
 .today-banner:active{border-color:var(--purple)}
@@ -1092,6 +1095,7 @@ function closeJournalModal(){
 
 function renderTopic(key){
   const t=tabs.find(x=>x.key===key);if(!t)return;
+  const preset=PRESETS.find(p=>p.key===key)||{};
   const el=document.getElementById('sec-main');
   const today=tk();
   const todayEntry=db[today];
@@ -1103,6 +1107,7 @@ function renderTopic(key){
   const best=vals.length?Math.max(...vals):0;
   const trend=vals.length>=2?(vals[0]-vals[1]):null;
   el.innerHTML=`
+    ${preset.question?`<div class="topic-question-banner">${preset.question}</div>`:''}
     <div class="today-banner" onclick="openModal('${today}')">
       <div style="flex:1;min-width:0">
         <div class="today-banner-label">Today</div>
