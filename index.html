@@ -183,6 +183,14 @@ canvas{display:block}
 .goal-editor-row{margin-bottom:1.25rem}
 .goal-editor-row label{display:block;font-size:14px;font-weight:500;margin-bottom:8px}
 
+/* BUILD BADGE */
+.build-badge{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);font-weight:400;letter-spacing:.04em;vertical-align:middle;margin-left:5px}
+/* DEV PANEL */
+.dev-btn{display:block;width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:8px;text-align:left;transition:background .15s}
+.dev-btn:active{background:var(--bg4)}
+.dev-btn.danger{border-color:rgba(239,68,68,.25);color:#EF4444}
+.dev-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:1.25rem;letter-spacing:.04em}
+
 /* DAILY SPLASH */
 .splash-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#0f0a28 0%,#1a1042 45%,#2e1600 100%);transition:transform .55s cubic-bezier(.4,0,.2,1);will-change:transform}
 .splash-overlay.hidden{display:none}
@@ -348,11 +356,11 @@ textarea:focus{border-color:var(--purple)}
 <div id="screen-app" class="screen">
   <div class="app-header">
     <div>
-      <div class="app-title">Selah</div>
+      <div class="app-title">Selah<span class="build-badge" id="build-badge"></span></div>
       <div class="app-date" id="header-date"></div>
     </div>
     <div class="header-btns">
-      <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9998;</div>
+      <div class="pen-btn" id="pen-btn" onclick="toggleEditMode()">&#9776;</div>
       <div class="header-avatar" id="header-avatar" onclick="openSidePanel()">?</div>
     </div>
   </div>
@@ -417,12 +425,24 @@ textarea:focus{border-color:var(--purple)}
   </div>
 </div>
 
+<!-- WRITE JOURNAL MODAL -->
+<div class="modal-overlay" id="write-journal-modal">
+  <div class="modal" style="display:flex;flex-direction:column;gap:0">
+    <div class="modal-header">
+      <div class="modal-title" id="wj-date"></div>
+      <button class="close-btn" onclick="closeWriteJournal()">Close</button>
+    </div>
+    <textarea id="wj-text" class="edit-note" style="min-height:200px;margin:1rem 0 0;font-size:14px;line-height:1.7" placeholder="What's on your mind…"></textarea>
+    <button class="save-btn" style="margin-top:.75rem" onclick="saveWriteJournal()">Save entry</button>
+  </div>
+</div>
+
 <!-- JOURNAL PAGE -->
 <div id="journal-page" class="jpage">
   <div class="jpage-header">
-    <button class="jpage-back" onclick="closeJournalPage()">← Overview</button>
+    <button class="pen-btn" onclick="openWriteJournal()" title="New entry">&#9998;</button>
     <div class="jpage-title">Journal</div>
-    <button class="jpage-write" onclick="closeJournalPage();openModal()">+ Log</button>
+    <button class="jpage-back" onclick="closeJournalPage()">Overview →</button>
   </div>
   <div id="jpage-list" class="jpage-list"></div>
 </div>
@@ -483,6 +503,13 @@ textarea:focus{border-color:var(--purple)}
       <div class="panel-nav-label">Settings</div>
       <div class="panel-nav-chevron">›</div>
     </div>
+    <div class="panel-nav-item" id="dev-nav-item" style="display:none" onclick="showPanelView('dev')">
+      <div class="panel-nav-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+      <div class="panel-nav-label">Developer</div>
+      <div class="panel-nav-chevron">›</div>
+    </div>
     <div style="padding:1.25rem;margin-top:.5rem">
       <button class="save-btn" style="margin-top:0" onclick="signOut();closeSidePanel()">Sign out</button>
     </div>
@@ -522,6 +549,23 @@ textarea:focus{border-color:var(--purple)}
       <div class="panel-title">Settings</div>
     </div>
     <div class="panel-section" style="color:var(--text3);font-size:13px;padding-top:2rem;text-align:center">Coming soon...</div>
+  </div>
+
+  <!-- DEVELOPER -->
+  <div id="panel-dev" class="panel-view">
+    <div class="panel-header">
+      <button class="panel-back" onclick="showPanelView('home')">‹ Back</button>
+      <div class="panel-title">Developer</div>
+    </div>
+    <div class="panel-section">
+      <div class="dev-label" id="dev-build-label"></div>
+      <div class="dev-label" style="margin-top:-.75rem;margin-bottom:1.5rem" id="dev-user-label"></div>
+      <button class="dev-btn" onclick="devRunSplash()">Play splash animation</button>
+      <button class="dev-btn" onclick="devGenerateData()">Generate 60 days of data</button>
+      <button class="dev-btn" onclick="devGenerateNotes()">Add notes to existing data</button>
+      <div style="height:1px;background:var(--border);margin:.75rem 0 1rem"></div>
+      <button class="dev-btn danger" onclick="devResetData()">Reset all data</button>
+    </div>
   </div>
 
 </div>
@@ -698,6 +742,7 @@ fauth.onAuthStateChanged(async user=>{
     currentUid=user.uid;
     await loadFromFirestore();
     updateAvatar();
+    initDevPanel();
     document.getElementById('screen-auth').classList.remove('active');
     if(tabs&&tabs.length){launchApp();}
     else{initOnboard();document.getElementById('screen-onboard').classList.add('active');}
@@ -1105,6 +1150,27 @@ function openJournalEntry(k){
 
 function closeJournalModal(){
   document.getElementById('journal-modal').classList.remove('open');
+}
+
+function openWriteJournal(){
+  const today=tk();
+  document.getElementById('wj-date').textContent=fd(today);
+  document.getElementById('wj-text').value=db[today]?.journal||'';
+  document.getElementById('write-journal-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('wj-text').focus(),50);
+}
+function closeWriteJournal(){
+  document.getElementById('write-journal-modal').classList.remove('open');
+}
+function saveWriteJournal(){
+  const today=tk();
+  const text=document.getElementById('wj-text').value.trim();
+  if(!db[today])db[today]={date:today};
+  db[today].journal=text;
+  saveDB();
+  closeWriteJournal();
+  renderJournalPage();
+  renderJournalPreviews();
 }
 
 function renderTopic(key){
@@ -1596,6 +1662,67 @@ function generateTestNotes(){
 
 function calcStreak(){const t=new Date();let s=0;for(let i=0;i<365;i++){const d=new Date(t);d.setDate(d.getDate()-i);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(db[k])s++;else if(i>0)break;}return s;}
 function calcLongestStreak(){const keys=Object.keys(db).sort();let longest=0,cur=0;keys.forEach((k,i)=>{if(i===0){cur=1;}else{const diff=(new Date(k)-new Date(keys[i-1]))/(864e5);cur=diff===1?cur+1:1;}longest=Math.max(longest,cur);});return longest;}
+
+// BUILD + DEV TOOLS
+const BUILD='b2';
+
+function initDevPanel(){
+  const el=document.getElementById('build-badge');
+  if(el)el.textContent=BUILD;
+  const user=fauth.currentUser;
+  if(!user)return;
+  if(user.email==='jonathanread07@gmail.com'){
+    const nav=document.getElementById('dev-nav-item');
+    if(nav)nav.style.display='';
+    const bl=document.getElementById('dev-build-label');
+    if(bl)bl.textContent='Build: '+BUILD;
+    const ul=document.getElementById('dev-user-label');
+    if(ul)ul.textContent=user.email;
+  }
+}
+
+function devRunSplash(){
+  closeSidePanel();
+  setTimeout(showSplashFull,300);
+}
+
+function devGenerateData(){
+  const journals=[
+    'Reflecting on the day. Some wins, some struggles. Grateful for the chance to keep trying.',
+    'Hard day but I showed up. That has to count for something.',
+    'Good morning session. Feeling motivated going into the week.',
+    'Tired today. Did not have much to give but gave what I had.',
+    'Strong day overall. Felt clear-headed and intentional.',
+    'Rough evening. Temptation hit hard. Prayed through it.',
+    'Grateful for accountability and community today.',
+    'One of those days where nothing goes right but you just keep moving.',
+    'Felt close to God today. Rare and good.',
+    'Rest day. Mentally and physically needed the break.',
+  ];
+  const today=new Date();let added=0;
+  for(let i=1;i<=60;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(db[k])continue;
+    const entry={date:k};
+    tabs.forEach(t=>{entry[t.key]=Math.floor(Math.random()*55)+30;});
+    entry.overall=tabs.length?Math.round(tabs.map(t=>entry[t.key]).reduce((a,b)=>a+b,0)/tabs.length):50;
+    if(Math.random()>.3)entry.journal=journals[Math.floor(Math.random()*journals.length)];
+    db[k]=entry;added++;
+  }
+  saveDB();renderSection(activeTab);
+  alert('Added '+added+' days of data.');
+}
+
+function devGenerateNotes(){
+  generateTestNotes();
+  alert('Notes added to existing entries.');
+}
+
+function devResetData(){
+  if(!confirm('Delete ALL logged data? This cannot be undone.'))return;
+  db={};saveDB();renderSection(activeTab);
+}
 </script>
 </body>
 </html>
