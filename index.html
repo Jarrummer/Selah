@@ -1451,6 +1451,7 @@ function saveEntry(){
     requestAnimationFrame(()=>{
       renderSection(activeTab);
       if(selectedCalDay===today)renderDaySummary(today);
+      completeSaveProgress();
     });
   },60);
 }
@@ -1515,6 +1516,7 @@ function saveEditForm(){
     requestAnimationFrame(()=>{
       renderSection(activeTab);
       if(selectedCalDay===today)renderDaySummary(today);
+      completeSaveProgress();
     });
   },60);
 }
@@ -1751,20 +1753,21 @@ function startSaveProgress(){
     pointerEvents:'none'
   });
   document.body.appendChild(toast);
+  // Start fill animation — runs slow so it stays alive during long renders
   setTimeout(()=>{
     const f=document.getElementById('_tfill');
-    if(f){f.style.transition='width .85s ease';f.style.width='82%';}
+    if(f){f.style.transition='width 3s ease';f.style.width='80%';}
   },40);
-  setTimeout(()=>{
-    const f=document.getElementById('_tfill');
-    if(f){f.style.transition='width .15s ease';f.style.width='100%';}
-    setTimeout(()=>{if(toast.parentNode)toast.remove();},220);
-  },1500);
 }
-function completeSaveProgress(){}
+function completeSaveProgress(){
+  const toast=document.getElementById('_toast');if(!toast)return;
+  const f=document.getElementById('_tfill');
+  if(f){f.style.transition='width .2s ease';f.style.width='100%';}
+  setTimeout(()=>{if(toast.parentNode)toast.remove();},400);
+}
 
 // BUILD + DEV TOOLS
-const BUILD='b14';
+const BUILD='b15';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
