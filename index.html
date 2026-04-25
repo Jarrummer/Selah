@@ -1137,10 +1137,7 @@ function renderTopic(key){
         <div class="topic-answer-text">${db[k][key+'_note']}</div>
       </div>`).join('')}
     </div>`:'';})()}
-    <div class="card">
-      <div class="card-title">Journal notes</div>
-      ${keys.slice(0,12).filter(k=>db[k].journal).map(k=>`<div class="history-entry"><div class="history-date">${fd(k)}</div><div class="history-note">${db[k].journal}</div></div>`).join('')||'<div class="empty-state">No journal entries yet.</div>'}
-    </div>`;
+  `;
 }
 
 function renderCal(){
