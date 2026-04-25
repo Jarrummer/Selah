@@ -248,8 +248,14 @@ canvas{display:block}
 .step-note:focus{border-color:var(--purple)}
 /* EDIT FORM */
 .edit-form{text-align:left;width:100%;padding:0}
-.edit-form-topic{margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.edit-form-topic{margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border);border-radius:var(--radius-sm);transition:background .3s}
 .edit-form-topic:last-of-type{border-bottom:none}
+.edit-form-topic.highlight{animation:topicGlow 2s ease forwards}
+@keyframes topicGlow{
+  0%{box-shadow:0 0 0 2px var(--purple);background:rgba(127,119,221,.1)}
+  65%{box-shadow:0 0 0 2px var(--purple);background:rgba(127,119,221,.1)}
+  100%{box-shadow:0 0 0 0 transparent;background:transparent}
+}
 .edit-topic-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .edit-topic-name{font-size:14px;font-weight:500;color:var(--text)}
 .edit-topic-score{font-size:13px;font-family:'DM Mono',monospace;font-weight:500}
@@ -1277,8 +1283,13 @@ function openModal(dateKey, startKey){
     renderEditForm();
     if(startKey){
       setTimeout(()=>{
-        const el=document.getElementById('esl-'+startKey);
-        if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+        const el=document.getElementById('etopic-'+startKey);
+        if(el){
+          el.scrollIntoView({behavior:'smooth',block:'center'});
+          el.classList.remove('highlight');
+          void el.offsetWidth; // force reflow so animation restarts cleanly
+          el.classList.add('highlight');
+        }
       },80);
     }
   } else {
@@ -1437,7 +1448,7 @@ function renderEditForm(){
     const val=stepValues[t.key];
     const preset=PRESETS.find(p=>p.key===t.key)||{};
     const noteVal=stepValues[t.key+'_note']||'';
-    return `<div class="edit-form-topic">
+    return `<div class="edit-form-topic" id="etopic-${t.key}">
       <div class="edit-topic-row">
         <span class="edit-topic-name">${t.icon||'⭐'} ${t.label}</span>
         <span class="edit-topic-score" id="ets-${t.key}" style="color:${sc(val)}">${val}%</span>
