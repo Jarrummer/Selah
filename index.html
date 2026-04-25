@@ -76,7 +76,7 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .drag-list{list-style:none}
 .drag-item{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;cursor:grab;user-select:none;transition:border-color .15s}
 .drag-item:active{cursor:grabbing}
-.drag-item.dragging{opacity:.4}
+.drag-item.dragging{opacity:.25;background:var(--bg3)}
 .drag-item.drag-over{border-color:var(--purple)}
 .drag-handle{color:var(--text3);font-size:18px;flex-shrink:0;cursor:grab;line-height:1}
 .drag-label{flex:1;font-size:14px;color:var(--text)}
@@ -915,23 +915,48 @@ function renderDragList(){
       <button class="drag-delete" onclick="delTab(${i})">×</button>
     </li>`
   ).join('');
-  list.ontouchmove=dTouchMove;
-  list.ontouchend=dTouchEnd;
+  if(list._tmove)list.removeEventListener('touchmove',list._tmove);
+  if(list._tend)list.removeEventListener('touchend',list._tend);
+  list._tmove=dTouchMove; list._tend=dTouchEnd;
+  list.addEventListener('touchmove',dTouchMove,{passive:false});
+  list.addEventListener('touchend',dTouchEnd);
 }
 
-let touchDragSrc=null;
-function dTouchStart(e,i){touchDragSrc=i;e.currentTarget.classList.add('dragging');}
+let touchDragSrc=null, touchClone=null, touchOffY=0;
+
+function dTouchStart(e,i){
+  if(!e.target.closest('.drag-handle'))return;
+  e.preventDefault();
+  touchDragSrc=i;
+  const el=e.currentTarget;
+  const rect=el.getBoundingClientRect();
+  touchOffY=e.touches[0].clientY-rect.top;
+  el.classList.add('dragging');
+  touchClone=el.cloneNode(true);
+  Object.assign(touchClone.style,{
+    position:'fixed',top:rect.top+'px',left:rect.left+'px',
+    width:rect.width+'px',zIndex:'9999',pointerEvents:'none',
+    opacity:'0.95',boxShadow:'0 8px 28px rgba(0,0,0,.5)',
+    transform:'scale(1.03)',transition:'box-shadow .15s',
+    background:'var(--bg3)',borderRadius:'var(--radius-sm)'
+  });
+  document.body.appendChild(touchClone);
+}
+
 function dTouchMove(e){
   e.preventDefault();
   if(touchDragSrc===null)return;
   const t=e.touches[0];
-  const items=[...document.querySelectorAll('#drag-list .drag-item')];
+  if(touchClone)touchClone.style.top=(t.clientY-touchOffY)+'px';
+  const items=[...document.querySelectorAll('#drag-list .drag-item:not(.dragging)')];
   items.forEach(el=>el.classList.remove('drag-over'));
   const over=items.find(el=>{const r=el.getBoundingClientRect();return t.clientY>=r.top&&t.clientY<=r.bottom;});
-  if(over&&parseInt(over.dataset.i)!==touchDragSrc)over.classList.add('drag-over');
+  if(over)over.classList.add('drag-over');
 }
+
 function dTouchEnd(){
   if(touchDragSrc===null)return;
+  if(touchClone){touchClone.remove();touchClone=null;}
   const over=document.querySelector('#drag-list .drag-item.drag-over');
   if(over){const ti=parseInt(over.dataset.i);if(ti!==touchDragSrc){const m=tabs.splice(touchDragSrc,1)[0];tabs.splice(ti,0,m);}}
   touchDragSrc=null;
