@@ -132,6 +132,36 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .journal-preview-text{font-size:13px;color:var(--text2);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
 .journal-hint{font-size:11px;color:var(--text3);text-align:center;padding:.5rem 0;font-family:'DM Mono',monospace}
 
+/* VIEW ALL BTN */
+.view-all-btn{background:none;border:none;color:var(--purple);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;padding:2px 0;font-weight:500}
+
+/* JOURNAL PAGE */
+.jpage{position:fixed;inset:0;z-index:150;background:var(--bg);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none;padding-bottom:2rem}
+.jpage.open{transform:translateX(0);pointer-events:auto}
+.jpage-header{display:flex;align-items:center;padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1;gap:8px}
+.jpage-back{background:none;border:none;color:var(--purple);font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;padding:0;flex-shrink:0}
+.jpage-title{flex:1;font-size:17px;font-weight:600;text-align:center}
+.jpage-write{background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;flex-shrink:0}
+.jpage-list{padding:1rem 1.25rem}
+.jpage-entry{border-bottom:1px solid var(--border);padding:1rem 0}
+.jpage-entry:last-child{border-bottom:none}
+.jpage-entry-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.jpage-entry-date{font-size:13px;font-weight:500;color:var(--text2);font-family:'DM Mono',monospace}
+.jpage-entry-text{font-size:14px;color:var(--text);line-height:1.65;margin-top:.4rem;white-space:pre-wrap}
+
+/* CHARTS */
+canvas{display:block}
+
+/* GOALS */
+.goal-row{margin-bottom:.9rem}
+.goal-meta{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--text);margin-bottom:5px}
+.goal-pct{font-size:12px;font-family:'DM Mono',monospace}
+.goal-track{height:6px;background:var(--bg4);border-radius:3px;position:relative;overflow:visible}
+.goal-actual{height:100%;border-radius:3px;transition:width .3s}
+.goal-marker{position:absolute;top:-3px;width:2px;height:12px;background:var(--gold);border-radius:1px;transform:translateX(-50%)}
+.goal-editor-row{margin-bottom:1.25rem}
+.goal-editor-row label{display:block;font-size:14px;font-weight:500;margin-bottom:8px}
+
 /* DAILY SPLASH */
 .splash-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#0f0a28 0%,#1a1042 45%,#2e1600 100%);transition:transform .55s cubic-bezier(.4,0,.2,1);will-change:transform}
 .splash-overlay.hidden{display:none}
@@ -363,6 +393,28 @@ textarea:focus{border-color:var(--purple)}
     </div>
     <div id="jm-pills" class="topic-pills" style="margin-bottom:1rem"></div>
     <div id="jm-body" style="font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap"></div>
+  </div>
+</div>
+
+<!-- JOURNAL PAGE -->
+<div id="journal-page" class="jpage">
+  <div class="jpage-header">
+    <button class="jpage-back" onclick="closeJournalPage()">← Overview</button>
+    <div class="jpage-title">Journal</div>
+    <button class="jpage-write" onclick="closeJournalPage();openModal()">+ Log</button>
+  </div>
+  <div id="jpage-list" class="jpage-list"></div>
+</div>
+
+<!-- GOALS EDITOR -->
+<div class="modal-overlay" id="goals-editor">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Set Goals</div>
+      <button class="close-btn" onclick="document.getElementById('goals-editor').classList.remove('open')">Close</button>
+    </div>
+    <div id="goals-editor-body"></div>
+    <button class="save-btn" onclick="saveGoalsEditor()">Save goals</button>
   </div>
 </div>
 
@@ -628,8 +680,8 @@ fauth.onAuthStateChanged(async user=>{
 
 async function loadFromFirestore(){
   const snap=await fstore.collection('users').doc(currentUid).get();
-  if(snap.exists){const d=snap.data();db=d.db||{};tabs=d.tabs||null;username=d.username||null;pfpUrl=d.pfpUrl||null;}
-  else{db={};tabs=null;username=null;pfpUrl=null;}
+  if(snap.exists){const d=snap.data();db=d.db||{};tabs=d.tabs||null;username=d.username||null;pfpUrl=d.pfpUrl||null;goals=d.goals||{};}
+  else{db={};tabs=null;username=null;pfpUrl=null;goals={};}
 }
 function saveDB(){
   if(!currentUid)return;
@@ -656,7 +708,7 @@ const PRESETS=[
   {key:'sobriety', label:'Sobriety',    icon:'💎', desc:'Stay sober and clear-headed', question:'Did you stay sober and clear-headed today?', notePlaceholder:'Any struggles worth noting?'},
 ];
 
-let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all', username=null, pfpUrl=null;
+let selectedPresets=[], customOnboard=[], tabs=[], db={}, activeTab='all', username=null, pfpUrl=null, goals={};
 let calYear, calMonth, editMode=false, dragSrc=null, selectedDate=null, selectedCalDay=null, lastCalTap={key:null,time:0};
 let lastJournalTap={key:null,time:0}, selectedJournalKey=null;
 
@@ -699,7 +751,20 @@ function launchApp(){
   const now=new Date();
   if(calYear===undefined){calYear=now.getFullYear();calMonth=now.getMonth();}
   renderTabBar();renderSection('all');
+  initSwipe();
   maybeSplash();
+}
+
+let swipeX=null;
+function initSwipe(){
+  const el=document.getElementById('sections-wrap');
+  el.addEventListener('touchstart',e=>{swipeX=e.touches[0].clientX;},{passive:true});
+  el.addEventListener('touchend',e=>{
+    if(swipeX===null)return;
+    const dx=e.changedTouches[0].clientX-swipeX;
+    swipeX=null;
+    if(dx<-60&&activeTab==='all')openJournalPage();
+  },{passive:true});
 }
 
 // DAILY SPLASH
@@ -797,7 +862,7 @@ function hideSplash(){
 // TABS
 function renderTabBar(){
   document.getElementById('tab-bar').innerHTML=
-    `<button class="tab-btn${activeTab==='all'?' active':''}" onclick="switchTab('all',this)">Summary</button>`+
+    `<button class="tab-btn${activeTab==='all'?' active':''}" onclick="switchTab('all',this)">Overview</button>`+
     tabs.map(t=>`<button class="tab-btn${activeTab===t.key?' active':''}" onclick="switchTab('${t.key}',this)">${t.label}</button>`).join('');
 }
 function switchTab(key,el){
@@ -824,15 +889,38 @@ function renderDragList(){
       <span class="chip-icon">${p.icon}</span>${p.label}
     </button>`;
   }).join('');
-  document.getElementById('drag-list').innerHTML=tabs.map((t,i)=>
+  const list=document.getElementById('drag-list');
+  list.innerHTML=tabs.map((t,i)=>
     `<li class="drag-item" draggable="true" data-i="${i}"
       ondragstart="dStart(event,${i})" ondragover="dOver(event,${i})"
-      ondrop="dDrop(event,${i})" ondragend="dEnd()">
-      <span class="drag-handle">&#9776;</span>
+      ondrop="dDrop(event,${i})" ondragend="dEnd()"
+      ontouchstart="dTouchStart(event,${i})">
+      <span class="drag-handle" style="touch-action:none">&#9776;</span>
       <span class="drag-label">${t.icon||'⭐'} ${t.label}</span>
       <button class="drag-delete" onclick="delTab(${i})">×</button>
     </li>`
   ).join('');
+  list.ontouchmove=dTouchMove;
+  list.ontouchend=dTouchEnd;
+}
+
+let touchDragSrc=null;
+function dTouchStart(e,i){touchDragSrc=i;e.currentTarget.classList.add('dragging');}
+function dTouchMove(e){
+  e.preventDefault();
+  if(touchDragSrc===null)return;
+  const t=e.touches[0];
+  const items=[...document.querySelectorAll('#drag-list .drag-item')];
+  items.forEach(el=>el.classList.remove('drag-over'));
+  const over=items.find(el=>{const r=el.getBoundingClientRect();return t.clientY>=r.top&&t.clientY<=r.bottom;});
+  if(over&&parseInt(over.dataset.i)!==touchDragSrc)over.classList.add('drag-over');
+}
+function dTouchEnd(){
+  if(touchDragSrc===null)return;
+  const over=document.querySelector('#drag-list .drag-item.drag-over');
+  if(over){const ti=parseInt(over.dataset.i);if(ti!==touchDragSrc){const m=tabs.splice(touchDragSrc,1)[0];tabs.splice(ti,0,m);}}
+  touchDragSrc=null;
+  renderDragList();
 }
 
 function editTogglePreset(key){
@@ -889,11 +977,31 @@ function renderAll(){
       <div id="cal-day-detail"></div>
     </div>
     <div class="card">
-      <div class="card-title">Journal</div>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        Journal
+        <button class="view-all-btn" onclick="openJournalPage()">View all →</button>
+      </div>
       <div id="all-journal"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        Charts
+      </div>
+      <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:.5rem">14-day overall score</div>
+      <canvas id="chart-bar" width="420" height="100" style="width:100%;height:80px;display:block"></canvas>
+      <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin:.75rem 0 .5rem">topic averages</div>
+      <canvas id="chart-radar" width="240" height="240" style="width:200px;height:200px;display:block;margin:0 auto"></canvas>
+    </div>
+    <div class="card" id="goals-card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        Goals
+        <button class="view-all-btn" onclick="openGoalsEditor()">Edit</button>
+      </div>
+      <div id="goals-body"></div>
     </div>`;
   renderCal();
   renderJournalPreviews();
+  setTimeout(()=>{drawBarChart();drawRadarChart();renderGoalsCard();},50);
 }
 
 function truncate(str,n){return str&&str.length>n?str.slice(0,n)+'…':str;}
@@ -1226,6 +1334,130 @@ function renderDaySummary(k){
 }
 
 // HELPERS
+// JOURNAL PAGE
+function openJournalPage(){
+  const pg=document.getElementById('journal-page');
+  pg.classList.add('open');
+  renderJournalPage();
+}
+function closeJournalPage(){document.getElementById('journal-page').classList.remove('open');}
+function renderJournalPage(){
+  const keys=Object.keys(db).filter(k=>db[k].journal).sort().reverse();
+  const el=document.getElementById('jpage-list');
+  if(!keys.length){el.innerHTML='<div class="empty-state" style="padding:2rem 0">No journal entries yet.</div>';return;}
+  el.innerHTML=keys.map(k=>{
+    const e=db[k];
+    const pills=tabs.map(t=>{const v=e[t.key];if(v===undefined)return '';return `<span class="topic-pill" style="background:${sc(v)}22;color:${sc(v)}">${t.label} ${v}%</span>`;}).join('');
+    return `<div class="jpage-entry">
+      <div class="jpage-entry-header">
+        <span class="jpage-entry-date">${fd(k)}</span>
+        <span style="font-size:13px;color:${sc(e.overall)};font-family:'DM Mono',monospace">${e.overall}%</span>
+      </div>
+      <div class="topic-pills" style="margin:.4rem 0">${pills}</div>
+      <div class="jpage-entry-text">${e.journal}</div>
+    </div>`;
+  }).join('');
+}
+
+// CHARTS
+function drawBarChart(){
+  const canvas=document.getElementById('chart-bar');
+  if(!canvas)return;
+  const keys=Object.keys(db).sort().slice(-14);
+  if(!keys.length)return;
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||420,H=80;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const gap=3,barW=Math.floor((W-gap*(keys.length-1))/keys.length);
+  ctx.clearRect(0,0,W,H);
+  keys.forEach((k,i)=>{
+    const v=db[k].overall||0;
+    const bh=Math.max(4,Math.floor((v/100)*(H-4)));
+    const x=i*(barW+gap);
+    ctx.fillStyle=sc(v)+'99';
+    ctx.beginPath();
+    ctx.roundRect(x,H-bh,barW,bh,3);
+    ctx.fill();
+  });
+}
+function drawRadarChart(){
+  const canvas=document.getElementById('chart-radar');
+  if(!canvas||tabs.length<3)return;
+  const dpr=window.devicePixelRatio||1;
+  const SIZE=200;
+  canvas.width=SIZE*dpr;canvas.height=SIZE*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const cx=SIZE/2,cy=SIZE/2,r=SIZE/2-24;
+  const n=tabs.length;
+  const angle=i=>(i/n)*Math.PI*2-Math.PI/2;
+  const avgs=tabs.map(t=>{
+    const vals=Object.values(db).map(e=>e[t.key]).filter(v=>v!==undefined);
+    return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+  });
+  ctx.clearRect(0,0,SIZE,SIZE);
+  // Grid rings
+  [25,50,75,100].forEach(pct=>{
+    ctx.beginPath();
+    for(let i=0;i<n;i++){const a=angle(i),rr=r*pct/100;i===0?ctx.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr):ctx.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}
+    ctx.closePath();ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;ctx.stroke();
+  });
+  // Axes
+  for(let i=0;i<n;i++){
+    const a=angle(i);
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;ctx.stroke();
+    // Labels
+    const lx=cx+Math.cos(a)*(r+14),ly=cy+Math.sin(a)*(r+14);
+    ctx.font=`${Math.min(9,Math.floor(200/n/2))}px DM Sans`;
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(tabs[i].icon||tabs[i].label.slice(0,3),lx,ly);
+  }
+  // Data fill
+  ctx.beginPath();
+  avgs.forEach((v,i)=>{const a=angle(i),rr=r*v/100;i===0?ctx.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr):ctx.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);});
+  ctx.closePath();
+  ctx.fillStyle='rgba(127,119,221,0.25)';ctx.fill();
+  ctx.strokeStyle='rgba(127,119,221,0.75)';ctx.lineWidth=2;ctx.stroke();
+  // Dots
+  avgs.forEach((v,i)=>{const a=angle(i),rr=r*v/100;ctx.beginPath();ctx.arc(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,3,0,Math.PI*2);ctx.fillStyle='var(--purple-light)';ctx.fill();});
+}
+
+// GOALS
+function saveGoals(){if(!currentUid)return;fstore.collection('users').doc(currentUid).set({goals},{merge:true});}
+function renderGoalsCard(){
+  const el=document.getElementById('goals-body');if(!el)return;
+  if(!tabs.length){el.innerHTML='<div class="empty-state">No topics set yet.</div>';return;}
+  el.innerHTML=tabs.map(t=>{
+    const goal=goals[t.key]||0;
+    const actual=Math.round((()=>{const vals=Object.values(db).map(e=>e[t.key]).filter(v=>v!==undefined);return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;})());
+    const met=actual>=goal&&goal>0;
+    return `<div class="goal-row">
+      <div class="goal-meta"><span>${t.icon||'⭐'} ${t.label}</span><span class="goal-pct" style="color:${goal>0?(met?'var(--green)':'var(--text2)'):'var(--text3)'}">${goal>0?actual+'% / '+goal+'% target':'No goal set'}</span></div>
+      ${goal>0?`<div class="goal-track"><div class="goal-actual" style="width:${actual}%;background:${sc(actual)}77"></div><div class="goal-marker" style="left:${goal}%"></div></div>`:''}
+    </div>`;
+  }).join('');
+}
+function openGoalsEditor(){
+  document.getElementById('goals-editor').classList.add('open');
+  document.getElementById('goals-editor-body').innerHTML=tabs.map(t=>`
+    <div class="goal-editor-row">
+      <label>${t.icon||'⭐'} ${t.label}</label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="range" min="0" max="100" step="5" value="${goals[t.key]||0}" id="gsl-${t.key}" oninput="document.getElementById('gv-${t.key}').textContent=this.value+'%'" style="flex:1">
+        <span id="gv-${t.key}" style="min-width:36px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text2)">${goals[t.key]||0}%</span>
+      </div>
+    </div>`).join('');
+}
+function saveGoalsEditor(){
+  tabs.forEach(t=>{const sl=document.getElementById('gsl-'+t.key);if(sl)goals[t.key]=parseInt(sl.value);});
+  saveGoals();
+  document.getElementById('goals-editor').classList.remove('open');
+  renderGoalsCard();
+}
+
 function tk(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function sc(s){if(s>=80)return '#86EFAC';if(s>=60)return '#16A34A';if(s>=40)return '#FDE047';if(s>=20)return '#FB923C';return '#EF4444';}
 function emoji(v){if(v>=85)return '😄';if(v>=65)return '🙂';if(v>=45)return '😐';if(v>=25)return '😕';return '😞';}
