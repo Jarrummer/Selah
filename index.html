@@ -1707,7 +1707,7 @@ function calcStreak(){const t=new Date();let s=0;for(let i=0;i<365;i++){const d=
 function calcLongestStreak(){const keys=Object.keys(db).sort();let longest=0,cur=0;keys.forEach((k,i)=>{if(i===0){cur=1;}else{const diff=(new Date(k)-new Date(keys[i-1]))/(864e5);cur=diff===1?cur+1:1;}longest=Math.max(longest,cur);});return longest;}
 
 // BUILD + DEV TOOLS
-const BUILD='b4';
+const BUILD='b5';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
