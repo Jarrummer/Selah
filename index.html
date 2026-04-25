@@ -147,7 +147,12 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .jpage-entry:last-child{border-bottom:none}
 .jpage-entry-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
 .jpage-entry-date{font-size:13px;font-weight:500;color:var(--text2);font-family:'DM Mono',monospace}
-.jpage-entry-text{font-size:14px;color:var(--text);line-height:1.65;margin-top:.4rem;white-space:pre-wrap}
+.jpage-entry-preview{font-size:14px;color:var(--text2);line-height:1.6;margin-top:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.jpage-entry:active{background:rgba(255,255,255,0.03)}
+.jpage-hint{font-size:11px;color:var(--text3);text-align:center;padding:1rem 0;font-family:'DM Mono',monospace}
+/* Journal detail modal — scrollable for long entries */
+#journal-modal .modal{overflow-y:auto;max-height:calc(100vh - 60px)}
+#jm-body{font-size:14px;color:var(--text);line-height:1.75;white-space:pre-wrap;word-break:break-word}
 
 /* CHARTS */
 canvas{display:block}
@@ -1341,22 +1346,27 @@ function openJournalPage(){
   renderJournalPage();
 }
 function closeJournalPage(){document.getElementById('journal-page').classList.remove('open');}
+let lastJPageTap={key:null,time:0};
+function jPageTap(k){
+  const now=Date.now();
+  if(lastJPageTap.key===k&&now-lastJPageTap.time<400){lastJPageTap={key:null,time:0};openJournalEntry(k);}
+  else{lastJPageTap={key:k,time:now};}
+}
+
 function renderJournalPage(){
   const keys=Object.keys(db).filter(k=>db[k].journal).sort().reverse();
   const el=document.getElementById('jpage-list');
   if(!keys.length){el.innerHTML='<div class="empty-state" style="padding:2rem 0">No journal entries yet.</div>';return;}
   el.innerHTML=keys.map(k=>{
     const e=db[k];
-    const pills=tabs.map(t=>{const v=e[t.key];if(v===undefined)return '';return `<span class="topic-pill" style="background:${sc(v)}22;color:${sc(v)}">${t.label} ${v}%</span>`;}).join('');
-    return `<div class="jpage-entry">
+    return `<div class="jpage-entry" onclick="jPageTap('${k}')">
       <div class="jpage-entry-header">
         <span class="jpage-entry-date">${fd(k)}</span>
-        <span style="font-size:13px;color:${sc(e.overall)};font-family:'DM Mono',monospace">${e.overall}%</span>
+        <span style="font-size:13px;color:${sc(e.overall)};font-family:'DM Mono',monospace">${e.overall}% overall</span>
       </div>
-      <div class="topic-pills" style="margin:.4rem 0">${pills}</div>
-      <div class="jpage-entry-text">${e.journal}</div>
+      <div class="jpage-entry-preview">${truncate(e.journal,140)}</div>
     </div>`;
-  }).join('');
+  }).join('')+'<div class="jpage-hint">double-tap any entry to read in full</div>';
 }
 
 // CHARTS
