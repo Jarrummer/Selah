@@ -1445,13 +1445,14 @@ function saveEntry(){
   });
   entry.overall=stepValues.overall!==undefined?stepValues.overall:Math.round(tabs.map(t=>entry[t.key]||0).reduce((a,b)=>a+b,0)/tabs.length);
   db[today]=entry;saveDB();
-  closeModal();
   startSaveProgress();
-  requestAnimationFrame(()=>{
-    renderSection(activeTab);
-    if(selectedCalDay===today)renderDaySummary(today);
-    completeSaveProgress();
-  });
+  setTimeout(()=>{
+    closeModal();
+    requestAnimationFrame(()=>{
+      renderSection(activeTab);
+      if(selectedCalDay===today)renderDaySummary(today);
+    });
+  },60);
 }
 
 function renderEditForm(){
@@ -1508,13 +1509,14 @@ function saveEditForm(){
   entry.journal=jEl?jEl.value:'';
   entry.overall=parseInt(document.getElementById('esl-overall')?.value||stepValues.overall||50);
   db[today]=entry;saveDB();
-  closeModal();
   startSaveProgress();
-  requestAnimationFrame(()=>{
-    renderSection(activeTab);
-    if(selectedCalDay===today)renderDaySummary(today);
-    completeSaveProgress();
-  });
+  setTimeout(()=>{
+    closeModal();
+    requestAnimationFrame(()=>{
+      renderSection(activeTab);
+      if(selectedCalDay===today)renderDaySummary(today);
+    });
+  },60);
 }
 
 function calDayTap(k){
@@ -1762,7 +1764,7 @@ function startSaveProgress(){
 function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b13';
+const BUILD='b14';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
