@@ -1228,22 +1228,22 @@ function renderTopic(key){
     <div class="today-banner" onclick="openModal('${today}','${key}')">
       <div style="flex:1;min-width:0">
         <div class="today-banner-label">Today</div>
-        <div class="today-banner-hint">${logged?'tap to edit':'tap to log'}</div>
-        ${logged&&todayEntry[key+'_note']?`<div class="today-banner-note">${todayEntry[key+'_note']}</div>`:''}
+        <div class="today-banner-hint" id="qt-hint">${logged?'tap to edit':'tap to log'}</div>
+        <div class="today-banner-note" id="qt-note" style="${logged&&todayEntry[key+'_note']?'':'display:none'}">${logged&&todayEntry[key+'_note']?todayEntry[key+'_note']:''}</div>
       </div>
-      <div class="today-banner-score" style="color:${logged?sc(todayVal):'var(--text3)'};flex-shrink:0">${logged?todayVal+'%':'—'}</div>
+      <div class="today-banner-score" id="qt-score" style="color:${logged?sc(todayVal):'var(--text3)'};flex-shrink:0">${logged?todayVal+'%':'—'}</div>
     </div>
     <div class="metric-grid">
-      <div class="metric"><div class="metric-label">avg score</div><div class="metric-val" style="color:${sc(avg)}">${avg}%</div></div>
-      <div class="metric"><div class="metric-label">days logged</div><div class="metric-val">${keys.length}</div></div>
-      <div class="metric"><div class="metric-label">best day</div><div class="metric-val" style="color:${sc(best)}">${best}%</div></div>
-      <div class="metric"><div class="metric-label">trend</div><div class="metric-val" style="color:${trend===null?'var(--text2)':trend>=0?'var(--green)':'var(--red)'}">${trend===null?'—':(trend>=0?'+':'')+trend+'%'}</div></div>
+      <div class="metric"><div class="metric-label">avg score</div><div class="metric-val" id="qt-avg" style="color:${sc(avg)}">${avg}%</div></div>
+      <div class="metric"><div class="metric-label">days logged</div><div class="metric-val" id="qt-days">${keys.length}</div></div>
+      <div class="metric"><div class="metric-label">best day</div><div class="metric-val" id="qt-best" style="color:${sc(best)}">${best}%</div></div>
+      <div class="metric"><div class="metric-label">trend</div><div class="metric-val" id="qt-trend" style="color:${trend===null?'var(--text2)':trend>=0?'var(--green)':'var(--red)'}">${trend===null?'—':(trend>=0?'+':'')+trend+'%'}</div></div>
     </div>
     <div class="card">
       <div class="card-title">Recent days</div>
-      ${keys.slice(0,7).map(k=>{const v=db[k][key];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div></div>`;}).join('')||'<div class="empty-state">No data yet.</div>'}
+      <div id="qt-bars">${keys.slice(0,7).map(k=>{const v=db[k][key];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div></div>`;}).join('')||'<div class="empty-state">No data yet.</div>'}</div>
     </div>
-    ${(()=>{const noteKeys=keys.filter(k=>db[k][key+'_note']);return noteKeys.length?`<div class="card">
+    <div id="qt-notes-card">${(()=>{const noteKeys=keys.filter(k=>db[k][key+'_note']);return noteKeys.length?`<div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
         <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${preset.question||'Notes'}</span>
         <button class="view-all-btn" onclick="openAnswersPage('${key}')">View all →</button>
@@ -1252,8 +1252,31 @@ function renderTopic(key){
         <div class="topic-answer-date">${fd(k)} <span style="color:${sc(db[k][key])}">${db[k][key]}%</span></div>
         <div class="topic-answer-text">${db[k][key+'_note']}</div>
       </div>`).join('')}
-    </div>`:'';})()}
+    </div>`:'';})()}</div>
   `;
+}
+
+function quickUpdateTopic(key){
+  const preset=PRESETS.find(p=>p.key===key)||{};
+  const today=tk();
+  const todayEntry=db[today];
+  const todayVal=todayEntry?.[key];
+  const logged=todayVal!==undefined;
+  const keys=Object.keys(db).filter(k=>db[k][key]!==undefined).sort().reverse();
+  const vals=keys.map(k=>db[k][key]);
+  const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+  const best=vals.length?Math.max(...vals):0;
+  const trend=vals.length>=2?(vals[0]-vals[1]):null;
+  const h=document.getElementById('qt-hint');if(h)h.textContent=logged?'tap to edit':'tap to log';
+  const n=document.getElementById('qt-note');if(n){n.textContent=logged&&todayEntry[key+'_note']?todayEntry[key+'_note']:'';n.style.display=logged&&todayEntry[key+'_note']?'':'none';}
+  const s=document.getElementById('qt-score');if(s){s.textContent=logged?todayVal+'%':'—';s.style.color=logged?sc(todayVal):'var(--text3)';}
+  const qa=document.getElementById('qt-avg');if(qa){qa.textContent=avg+'%';qa.style.color=sc(avg);}
+  const qd=document.getElementById('qt-days');if(qd)qd.textContent=keys.length;
+  const qb=document.getElementById('qt-best');if(qb){qb.textContent=best+'%';qb.style.color=sc(best);}
+  const qt=document.getElementById('qt-trend');if(qt){qt.textContent=trend===null?'—':(trend>=0?'+':'')+trend+'%';qt.style.color=trend===null?'var(--text2)':trend>=0?'var(--green)':'var(--red)';}
+  const bars=document.getElementById('qt-bars');if(bars)bars.innerHTML=keys.slice(0,7).map(k=>{const v=db[k][key];return `<div class="bar-wrap"><div class="bar-meta"><span>${fd(k)}</span><span style="color:${sc(v)}">${v}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${sc(v)}"></div></div></div>`;}).join('')||'<div class="empty-state">No data yet.</div>';
+  const nc=document.getElementById('qt-notes-card');
+  if(nc){const noteKeys=keys.filter(k=>db[k][key+'_note']);nc.innerHTML=noteKeys.length?`<div class="card"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${preset.question||'Notes'}</span><button class="view-all-btn" onclick="openAnswersPage('${key}')">View all →</button></div>${noteKeys.slice(0,3).map(k=>`<div class="topic-answer-entry"><div class="topic-answer-date">${fd(k)} <span style="color:${sc(db[k][key])}">${db[k][key]}%</span></div><div class="topic-answer-text">${db[k][key+'_note']}</div></div>`).join('')}</div>`:'';}
 }
 
 function renderCal(){
@@ -1453,7 +1476,8 @@ function saveEntry(){
   requestAnimationFrame(()=>{
     closeModal();
     requestAnimationFrame(()=>{
-      renderSection(activeTab);
+      if(activeTab!=='all')quickUpdateTopic(activeTab);
+      else renderSection('all');
       if(selectedCalDay===today)renderDaySummary(today);
     });
   });
@@ -1517,7 +1541,8 @@ function saveEditForm(){
   requestAnimationFrame(()=>{
     closeModal();
     requestAnimationFrame(()=>{
-      renderSection(activeTab);
+      if(activeTab!=='all')quickUpdateTopic(activeTab);
+      else renderSection('all');
       if(selectedCalDay===today)renderDaySummary(today);
     });
   });
@@ -1746,7 +1771,7 @@ function startSaveProgress(){
 function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b19';
+const BUILD='b20';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
