@@ -136,7 +136,7 @@ body{background:transparent;font-family:'DM Sans',sans-serif;color:#f0efe8;min-h
 .topic-question-banner{font-size:15px;font-weight:500;color:var(--text2);line-height:1.5;padding:1.25rem 1.25rem .25rem;font-style:italic}
 
 /* TODAY BANNER */
-.today-banner{display:flex;justify-content:space-between;align-items:center;background:rgba(20,20,22,0.95);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem 1.25rem;margin:1.25rem 1.25rem .25rem;cursor:pointer;transition:border-color .15s}
+.today-banner{display:flex;justify-content:space-between;align-items:center;background:rgba(20,20,22,0.95);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem 1.25rem;margin:1.25rem 1.25rem .25rem;cursor:pointer;transition:border-color .15s;touch-action:manipulation}
 .today-banner:active{border-color:var(--purple)}
 .today-banner-label{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace}
 .today-banner-hint{font-size:11px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace}
@@ -245,7 +245,7 @@ canvas{display:block}
 .step-nav{display:flex;justify-content:space-between;align-items:center;padding:.25rem 0 .5rem;gap:8px}
 .step-back-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);padding:11px 20px;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:color .15s}
 .step-back-btn:active{color:var(--text)}
-.step-next-btn{flex:1;background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);padding:12px 20px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s}
+.step-next-btn{flex:1;background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);padding:12px 20px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;touch-action:manipulation}
 .step-next-btn:active{background:var(--purple-dark)}
 .step-next-btn.save{background:var(--gold);color:#0d0d0f}
 .step-next-btn.save:active{background:var(--gold-dark);color:#fff}
@@ -991,7 +991,7 @@ function switchTab(key,el){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('log-btn').style.display=key==='all'?'block':'none';
-  renderSection(key);
+  requestAnimationFrame(()=>renderSection(key));
 }
 
 // EDIT MODE — now lives in the side panel via openTopicsPanel()
@@ -1472,15 +1472,15 @@ function saveEntry(){
   });
   entry.overall=stepValues.overall!==undefined?stepValues.overall:Math.round(tabs.map(t=>entry[t.key]||0).reduce((a,b)=>a+b,0)/tabs.length);
   db[today]=entry;saveDB();
-  startSaveProgress();
-  requestAnimationFrame(()=>{
+  if(activeTab!=='all'){
     closeModal();
+    quickUpdateTopic(activeTab);
+  } else {
     requestAnimationFrame(()=>{
-      if(activeTab!=='all')quickUpdateTopic(activeTab);
-      else renderSection('all');
-      if(selectedCalDay===today)renderDaySummary(today);
+      closeModal();
+      requestAnimationFrame(()=>renderSection('all'));
     });
-  });
+  }
 }
 
 function renderEditForm(){
@@ -1537,15 +1537,15 @@ function saveEditForm(){
   entry.journal=jEl?jEl.value:'';
   entry.overall=parseInt(document.getElementById('esl-overall')?.value||stepValues.overall||50);
   db[today]=entry;saveDB();
-  startSaveProgress();
-  requestAnimationFrame(()=>{
+  if(activeTab!=='all'){
     closeModal();
+    quickUpdateTopic(activeTab);
+  } else {
     requestAnimationFrame(()=>{
-      if(activeTab!=='all')quickUpdateTopic(activeTab);
-      else renderSection('all');
-      if(selectedCalDay===today)renderDaySummary(today);
+      closeModal();
+      requestAnimationFrame(()=>renderSection('all'));
     });
-  });
+  }
 }
 
 function calDayTap(k){
@@ -1771,7 +1771,7 @@ function startSaveProgress(){
 function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b20';
+const BUILD='b21';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
