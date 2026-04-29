@@ -1314,28 +1314,27 @@ function openModal(dateKey, startKey){
     stepValues[t.key+'_note']=ex[t.key+'_note']||'';
   });
   document.getElementById('modal-title').textContent=editMode2?'Edit: '+fd(selectedDate):'End-of-day check-in';
-  document.getElementById('modal').classList.add('open');
   if(editMode2){
-    requestAnimationFrame(()=>{
-      renderEditForm();
-      if(startKey){
-        setTimeout(()=>{
-          const el=document.getElementById('etopic-'+startKey);
-          if(el){
-            el.scrollIntoView({behavior:'instant',block:'center'});
-            setTimeout(()=>{
-              el.classList.remove('highlight');
-              requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('highlight')));
-            },420);
-          }
-        },80);
-      }
-    });
+    renderEditForm();
+    document.getElementById('modal').classList.add('open');
+    if(startKey){
+      requestAnimationFrame(()=>{
+        const el=document.getElementById('etopic-'+startKey);
+        if(el){
+          el.scrollIntoView({behavior:'instant',block:'center'});
+          setTimeout(()=>{
+            el.classList.remove('highlight');
+            requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('highlight')));
+          },420);
+        }
+      });
+    }
   } else {
     const idx=startKey?tabs.findIndex(t=>t.key===startKey):-1;
     stepIndex=idx>=0?idx:0;
     restoreStepNav();
     renderStep(false);
+    document.getElementById('modal').classList.add('open');
   }
 }
 
@@ -1475,12 +1474,12 @@ function saveEntry(){
   entry.overall=stepValues.overall!==undefined?stepValues.overall:Math.round(tabs.map(t=>entry[t.key]||0).reduce((a,b)=>a+b,0)/tabs.length);
   db[today]=entry;saveDB();
   if(activeTab!=='all'){
-    closeModal();
     quickUpdateTopic(activeTab);
+    closeModal();
   } else {
     requestAnimationFrame(()=>{
+      renderSection('all');
       closeModal();
-      requestAnimationFrame(()=>renderSection('all'));
     });
   }
 }
@@ -1540,12 +1539,12 @@ function saveEditForm(){
   entry.overall=parseInt(document.getElementById('esl-overall')?.value||stepValues.overall||50);
   db[today]=entry;saveDB();
   if(activeTab!=='all'){
-    closeModal();
     quickUpdateTopic(activeTab);
+    closeModal();
   } else {
     requestAnimationFrame(()=>{
+      renderSection('all');
       closeModal();
-      requestAnimationFrame(()=>renderSection('all'));
     });
   }
 }
@@ -1773,7 +1772,7 @@ function startSaveProgress(){
 function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b25';
+const BUILD='b26';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
