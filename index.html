@@ -590,6 +590,8 @@ textarea:focus{border-color:var(--purple)}
     <div class="panel-section">
       <div class="dev-label" id="dev-build-label"></div>
       <div class="dev-label" style="margin-top:-.75rem;margin-bottom:1.5rem" id="dev-user-label"></div>
+      <button class="dev-btn" onclick="devProfile()">Profile open/close speed</button>
+      <div id="dev-profile-result" style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);margin-bottom:1rem;white-space:pre-wrap"></div>
       <button class="dev-btn" onclick="startSaveProgress()">Test saving toast</button>
       <button class="dev-btn" onclick="devRunSplash()">Play splash animation</button>
       <button class="dev-btn" onclick="devGenerateData()">Generate 60 days of data</button>
@@ -1771,7 +1773,7 @@ function startSaveProgress(){
 function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b22';
+const BUILD='b23';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
@@ -1829,6 +1831,32 @@ function devGenerateNotes(){
 function devResetData(){
   if(!confirm('Delete ALL logged data? This cannot be undone.'))return;
   db={};saveDB();renderSection(activeTab);
+}
+function devProfile(){
+  const out=document.getElementById('dev-profile-result');
+  out.textContent='Running…';
+  const r=[];
+  const t0=performance.now();
+  // 1. addClass open (modal show)
+  document.getElementById('modal').classList.add('open');
+  r.push('modal open CSS: '+(performance.now()-t0).toFixed(1)+'ms');
+  // 2. renderEditForm
+  const t1=performance.now();
+  renderEditForm();
+  r.push('renderEditForm: '+(performance.now()-t1).toFixed(1)+'ms');
+  // 3. wait one frame, then measure close
+  requestAnimationFrame(()=>{
+    const t2=performance.now();
+    document.getElementById('modal').classList.remove('open');
+    r.push('modal close CSS: '+(performance.now()-t2).toFixed(1)+'ms');
+    // 4. quickUpdateTopic (if on a topic tab)
+    const t3=performance.now();
+    if(activeTab!=='all')quickUpdateTopic(activeTab);
+    else renderSection('all');
+    r.push((activeTab!=='all'?'quickUpdateTopic':'renderSection all')+': '+(performance.now()-t3).toFixed(1)+'ms');
+    r.push('total: '+(performance.now()-t0).toFixed(1)+'ms');
+    out.textContent=r.join('\n');
+  });
 }
 </script>
 </body>
