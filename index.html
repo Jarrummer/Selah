@@ -220,8 +220,8 @@ canvas{display:block}
 .log-btn:active{transform:translateX(-50%) scale(.97);background:var(--purple-dark)}
 
 /* MODAL */
-.modal-overlay{opacity:0;pointer-events:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;overflow-y:scroll;-webkit-overflow-scrolling:touch}
-.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-overlay.open{display:block}
 .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius) var(--radius) 0 0;padding:1.25rem;margin-top:60px;min-height:calc(100vh - 60px)}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
 .modal-title{font-size:18px;font-weight:600}
@@ -1314,11 +1314,11 @@ function openModal(dateKey, startKey){
     stepValues[t.key+'_note']=ex[t.key+'_note']||'';
   });
   document.getElementById('modal-title').textContent=editMode2?'Edit: '+fd(selectedDate):'End-of-day check-in';
+  document.getElementById('modal').classList.add('open');
   if(editMode2){
-    renderEditForm();
-    document.getElementById('modal').classList.add('open');
-    if(startKey){
-      requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      renderEditForm();
+      if(startKey){
         const el=document.getElementById('etopic-'+startKey);
         if(el){
           el.scrollIntoView({behavior:'instant',block:'center'});
@@ -1327,14 +1327,13 @@ function openModal(dateKey, startKey){
             requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('highlight')));
           },420);
         }
-      });
-    }
+      }
+    });
   } else {
     const idx=startKey?tabs.findIndex(t=>t.key===startKey):-1;
     stepIndex=idx>=0?idx:0;
     restoreStepNav();
     renderStep(false);
-    document.getElementById('modal').classList.add('open');
   }
 }
 
@@ -1772,7 +1771,7 @@ function startSaveProgress(){
 function completeSaveProgress(){}
 
 // BUILD + DEV TOOLS
-const BUILD='b27';
+const BUILD='b28';
 
 function initDevPanel(){
   const el=document.getElementById('build-badge');
